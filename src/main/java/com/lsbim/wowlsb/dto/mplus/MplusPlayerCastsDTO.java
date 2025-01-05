@@ -14,6 +14,5 @@ public class MplusPlayerCastsDTO {
     private long timestamp;
     private String type;
     private int abilityGameID;
-    private String skillName;
 
 }

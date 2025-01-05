@@ -81,14 +81,14 @@ public class GetMplusPlayerDetailsTests {
         String className = "Mage";
         String spec = "Arcane";
 
-        String role = playerService.findRole(className, spec);
-        log.info(role);
+//        String role = playerService.findRole(className, spec);
+//        log.info(role);
 
         JsonNode details = result.path("data").path("reportData")
                 .path("report").path("playerDetails")
                 .path("data").path("playerDetails");
 
-        int actorId = playerService.findActorId(role, className, name, details);
-        log.info(actorId);
+//        int actorId = playerService.findActorId(role, className, name, details);
+//        log.info(actorId);
     }
 }

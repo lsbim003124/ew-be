@@ -255,7 +255,7 @@ public class MplusProcessingTests {
         }
 //        log.info(usedSkillIds);
         //        스킬목록 추가
-        rankingsDTO.setPlayerSkillInfo(playerService.getPlayerSkillList(className, spec, usedSkillIds));
+//        rankingsDTO.setPlayerSkillInfo(playerService.getPlayerSkillList(className, spec, usedSkillIds));
 //        log.info(rankingsDTO);
 
         ObjectNode objectNode = om.valueToTree(rankingsDTO);
@@ -329,7 +329,7 @@ public class MplusProcessingTests {
 
 //        log.info(usedSkillIds);
         //        스킬목록 추가
-        rankingsDTO.setPlayerSkillInfo(playerService.getPlayerSkillList(className, spec, usedSkillIds));
+//        rankingsDTO.setPlayerSkillInfo(playerService.getPlayerSkillList(className, spec, usedSkillIds));
 //        log.info(rankingsDTO);
 
         ObjectNode objectNode = om.valueToTree(rankingsDTO);

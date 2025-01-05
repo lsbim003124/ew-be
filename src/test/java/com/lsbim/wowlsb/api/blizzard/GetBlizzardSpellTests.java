@@ -14,10 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @SpringBootTest
 @Log4j2
@@ -42,7 +39,7 @@ public class GetBlizzardSpellTests {
     private SpellRepository spellRepository;
 
     @Test
-    public void getBlizzradSpellTest1(){
+    public void getBlizzradSpellTest1() {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
 
@@ -50,7 +47,7 @@ public class GetBlizzardSpellTests {
 
         int spellId = 102560;
 
-        String url = apiUrl+spellId+wowParam;
+        String url = apiUrl + spellId + wowParam;
 
         // API 요청
         ResponseEntity<ObjectNode> response = restTemplate.exchange(
@@ -67,8 +64,8 @@ public class GetBlizzardSpellTests {
     }
 
     @Test
-    public void getBlizzradSpellTest2(){
-        int spellId = 102560;
+    public void getBlizzradSpellTest2() {
+        int spellId = 448847;
 
         String spellName = blizzardService.getSpellInfoByBlizzard(spellId);
 
@@ -79,7 +76,7 @@ public class GetBlizzardSpellTests {
                 .spellName(spellName)
                 .build();
 
-        log.info("spell: {}",spell);
+        log.info("spell: {}", spell);
 
         spellRepository.save(spell);
 
@@ -87,8 +84,37 @@ public class GetBlizzardSpellTests {
 
         Optional<Spell> find = spellRepository.findById(spellId);
 
-        if(find.isPresent()){
-            log.info("find: {}",find);
+        if (find.isPresent()) {
+            log.info("find: {}", find);
+        }
+    }
+
+    @Test
+    public void getBlizzradSpellTest3() {
+        Set<Integer> spells = new HashSet<>(Arrays.asList(448847, 448877, 447261, 448953));
+
+        for (int spellId : spells) {
+
+            String spellName = blizzardService.getSpellInfoByBlizzard(spellId);
+
+            log.info("spellName: {}", spellName);
+
+            Spell spell = Spell.builder()
+                    .spellId(spellId)
+                    .spellName(spellName)
+                    .build();
+
+            log.info("spell: {}", spell);
+
+            spellRepository.save(spell);
+
+            log.info("=================================");
+
+            Optional<Spell> find = spellRepository.findById(spellId);
+
+            if (find.isPresent()) {
+                log.info("find: {}", find);
+            }
         }
     }
 }

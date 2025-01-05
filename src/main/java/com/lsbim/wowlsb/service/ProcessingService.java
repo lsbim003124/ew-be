@@ -8,6 +8,8 @@ import com.lsbim.wowlsb.dto.mplus.MplusPlayerCastsDTO;
 import com.lsbim.wowlsb.dto.mplus.MplusRankingsDTO;
 import com.lsbim.wowlsb.service.events.BuffsService;
 import com.lsbim.wowlsb.service.events.CastsService;
+import com.lsbim.wowlsb.service.repository.SpellService;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -19,6 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Log4j2
 public class ProcessingService {
 
     @Autowired
@@ -41,6 +44,9 @@ public class ProcessingService {
 
     @Autowired
     private ObjectMapper om;
+
+    @Autowired
+    private SpellService spellService;
 
 
     public ObjectNode doProcessing(String className, String spec, int dungeonId) {
@@ -138,11 +144,11 @@ public class ProcessingService {
         }
         if (usedPlayerSkillIds.size() > 0) {
             // 실제 사용한 스킬목록 추가
-            rankingsDTO.setPlayerSkillInfo(playerService.getPlayerSkillList(className, spec, usedPlayerSkillIds));
+            rankingsDTO.setPlayerSkillInfo(spellService.getBySpellIds(usedPlayerSkillIds));
         }
         if (takenSkillIds.size() > 0) {
             // 실제 적용된 외생기목록 추가
-            rankingsDTO.setTakenBuffInfo(takenSkillIds);
+            rankingsDTO.setTakenBuffInfo(spellService.getBySpellIds(takenSkillIds));
         }
 
         ObjectNode objectNode = om.valueToTree(rankingsDTO);

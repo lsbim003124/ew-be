@@ -32,6 +32,8 @@ public class BlizzardService {
     private String wowParam;
 
     public String getSpellInfoByBlizzard(int spellId){
+
+        // ************보스 스킬 정보는 제공하지 않기 때문에 skillName을 파악할 수 없음************
         String token = getAccessToken();
 
         HttpHeaders headers = new HttpHeaders();

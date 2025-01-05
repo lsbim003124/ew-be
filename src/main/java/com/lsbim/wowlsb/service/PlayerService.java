@@ -8,6 +8,7 @@ import com.lsbim.wowlsb.enums.character.Spec;
 import com.lsbim.wowlsb.enums.character.WowClass;
 import com.lsbim.wowlsb.enums.character.skill.defensive.*;
 import com.lsbim.wowlsb.enums.utils.SkillProperty;
+import com.lsbim.wowlsb.service.repository.WowClassService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,8 @@ import java.util.stream.Stream;
 @Log4j2
 @RequiredArgsConstructor
 public class PlayerService {
+
+    private final WowClassService wowClassService;
 
     //    순회용 직업별 스킬 열거클래스들..
     public static final List<Class<? extends SkillInfo>> SKILL_ENUMS = Arrays.asList(
@@ -95,14 +98,14 @@ public class PlayerService {
                 .path("report").path("playerDetails")
                 .path("data").path("playerDetails");
 
-        String role = findRole(className, spec);
-        int actorId = findActorId(role, className, name, details);
+        String role = wowClassService.getRoleByClassNameAndSpecName(className,spec);
+        int actorId = getActorId(role, className, name, details);
 
 //        log.info("1회 호출");
         return actorId;
     }
 
-    public int findActorId(String role, String className, String name, JsonNode node) {
+    public int getActorId(String role, String className, String name, JsonNode node) {
 
         JsonNode rolePlayers = node.path(role);
 
@@ -113,24 +116,6 @@ public class PlayerService {
         }
 
         return 0;
-    }
-
-    public String findRole(String className, String spec) {
-        // 클래스 이름으로 WowClass enum 찾기
-        WowClass wowClass = Arrays.stream(WowClass.values())
-                .filter(wc -> wc.getDisplayName().equalsIgnoreCase(className))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Invalid class name: " + className));
-
-        // 클래스와 특성 이름으로 Spec 찾기
-        return Arrays.stream(Spec.values())
-                .filter(s -> s.getWowClass() == wowClass // Spec에서 내가 찾고자 하는 직업명과 비교
-                        && s.getSpecName().equalsIgnoreCase(spec)) // 내가 찾고자 하는 전문화명과 비교
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Invalid spec name: " + spec + " for class: " + className
-                ))
-                .getRole().getValue();
     }
 
     //    스킬번호 배열 반환
@@ -215,41 +200,4 @@ public class PlayerService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid class name: " + className));
 
     }
-
-    public String findSkillName(int skillId, String className) {
-
-        WowClass wowClass = findWowClass(className);
-
-        return SKILL_ENUMS.stream()
-                .map(Class::getEnumConstants)
-                .flatMap(Arrays::stream)
-                .filter(SkillInfo.class::isInstance)
-                .map(SkillInfo.class::cast)
-                .filter(skill -> skill.getClassName() == wowClass && skill.getSkillId() == skillId)
-                .map(SkillInfo::getSkillName)
-                .findFirst()
-                .orElse(null);
-    }
-
-    public List<PlayerSkillInfoDTO> getPlayerSkillList(String className, String spec, Set<Integer> usedSkillIds) {
-//        해당 직업/전문화가 사용 가능한 모든 스킬 리스트 가져오기
-        WowClass wowClass = findWowClass(className);
-
-        return SKILL_ENUMS.stream()
-                .map(Class::getEnumConstants)  // 각 열거형 클래스의 모든 상수 가져오기
-                .flatMap(Arrays::stream)       // 배열을 단일 스트림으로 평탄화
-                .filter(SkillInfo.class::isInstance)  // SkillInfo 타입인지 확인
-                .map(SkillInfo.class::cast)    // SkillInfo로 형변환
-                // 직업이 같고, 전문화가 같거나 공용스킬인 것만 가져오도록 필터링
-                .filter(skill -> skill.getClassName() == wowClass
-                        && (skill.getSpec().equals(spec) || skill.getSpec().equals("ALL"))
-                        && usedSkillIds.contains(skill.getSkillId())) // 실제 사용된 주문번호에 포함돼있는지?
-                // PlayerSkillInfoDTO로 형변환, DTO 생성자에 스킬이름과 스킬Id를 전달
-                .map(skill -> new PlayerSkillInfoDTO(
-                        skill.getSkillName(),
-                        skill.getSkillId()))
-                // 결과를 리스트로
-                .collect(Collectors.toList());
-    }
-
 }

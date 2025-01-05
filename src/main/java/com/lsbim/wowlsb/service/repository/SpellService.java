@@ -3,7 +3,9 @@ package com.lsbim.wowlsb.service.repository;
 import com.lsbim.wowlsb.entity.Spell;
 import com.lsbim.wowlsb.repository.SpellRepository;
 import com.lsbim.wowlsb.service.BlizzardService;
+import com.lsbim.wowlsb.util.CustomSpellConfig;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,13 +17,14 @@ import java.util.stream.Collectors;
 
 @Service
 @Log4j2
+@RequiredArgsConstructor
 public class SpellService {
 
-    @Autowired
-    private SpellRepository spellRepository;
+    private final SpellRepository spellRepository;
 
-    @Autowired
-    private BlizzardService blizzardService;
+    private final BlizzardService blizzardService;
+
+    private final CustomSpellConfig customSpellConfig;
 
     @Transactional
     public void addSpell(int spellId) {
@@ -41,7 +44,7 @@ public class SpellService {
         log.info("Insert. Spell. => " + spell);
     }
 
-    public List<Spell> findBySpellIds(Set<Integer> spellIds) {
+    public List<Spell> getBySpellIds(Set<Integer> spellIds) {
 
         List<Spell> spells = spellRepository.findByspellIdIn(spellIds);
 
@@ -56,8 +59,13 @@ public class SpellService {
             return spells;
         }
 
-        for(int spellId : diffSet){
-            addSpell(spellId);
+        for (int spellId : diffSet) {
+            if (customSpellConfig.CUSTOM_SPELLS.containsKey(spellId)) {
+                customSpellConfig.createCustomSpell(spellId);
+            } else {
+                log.info("Insert Spell List -> {}", diffSet);
+                addSpell(spellId);
+            }
         }
 
         return spellRepository.findByspellIdIn(spellIds);

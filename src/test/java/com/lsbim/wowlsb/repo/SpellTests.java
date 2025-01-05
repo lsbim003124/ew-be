@@ -64,7 +64,7 @@ public class SpellTests {
 
         log.info("spellIds: {}", spellIds);
 
-        List<Spell> spells = spellService.findBySpellIds(spellIds);
+        List<Spell> spells = spellService.getBySpellIds(spellIds);
 
         log.info("spells: {}", spells);
     }

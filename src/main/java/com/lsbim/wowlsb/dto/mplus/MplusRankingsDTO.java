@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.lsbim.wowlsb.dto.PlayerSkillInfoDTO;
+import com.lsbim.wowlsb.entity.Spell;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,9 +22,9 @@ import java.util.Set;
 public class MplusRankingsDTO {
 
     private List<Ranking> rankings = new ArrayList<>();
-    private List<PlayerSkillInfoDTO> playerSkillInfo = new ArrayList<>();
+    private List<Spell> playerSkillInfo = new ArrayList<>();
     private Set<Integer> bossSkillInfo = new HashSet<>();
-    private Set<Integer> takenBuffInfo = new HashSet<>();
+    private List<Spell> takenBuffInfo = new ArrayList<>();
 
     @Data
     @NoArgsConstructor

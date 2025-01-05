@@ -87,13 +87,11 @@ public class BuffsService {
                     .path("data").path("reportData")
                     .path("report").path("events").path("data");
 
-            String skillName = findTakenSkillName(skillId);
-
             List<MplusPlayerCastsDTO> arr = new ArrayList<>();
 
             for (JsonNode event : events) {
                 if (event.path("targetID").asInt() == actorId) {
-                    MplusPlayerCastsDTO dto = createPlayerDefensiveDTO(event,skillName);
+                    MplusPlayerCastsDTO dto = createPlayerDefensiveDTO(event);
                     arr.add(dto);
                 }
             }
@@ -105,14 +103,13 @@ public class BuffsService {
         return dtoList;
     }
 
-    private MplusPlayerCastsDTO createPlayerDefensiveDTO(JsonNode node, String skillName) {
+    private MplusPlayerCastsDTO createPlayerDefensiveDTO(JsonNode node) {
 
         MplusPlayerCastsDTO dto = new MplusPlayerCastsDTO();
 
         dto.setType(node.path("type").asText());
         dto.setTimestamp(node.path("timestamp").asLong());
         dto.setAbilityGameID(node.path("abilityGameID").asInt());
-        dto.setSkillName(skillName);
 
         return dto;
     }

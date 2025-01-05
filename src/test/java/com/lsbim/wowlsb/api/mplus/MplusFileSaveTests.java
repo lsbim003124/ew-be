@@ -37,8 +37,8 @@ public class MplusFileSaveTests {
 
         log.info(dungeonIds);
 
-        String className = "Druid";
-        String spec = "Balance";
+        String className = "Priest";
+        String spec = "Discipline";
 
         try {
             // 기본 저장 경로 설정 (파일 객체 생성)

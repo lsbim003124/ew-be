@@ -173,10 +173,8 @@ public class CastsService {
 
             List<MplusPlayerCastsDTO> arr = new ArrayList<>();
 
-            String skillName = playerService.findSkillName(skillId, className);
-
             for (JsonNode event : events) {
-                MplusPlayerCastsDTO dto = createPlayerDefensiveDTO(event, skillName);
+                MplusPlayerCastsDTO dto = createPlayerDefensiveDTO(event);
                 arr.add(dto);
             }
 
@@ -201,14 +199,13 @@ public class CastsService {
         return dto;
     }
 
-    private MplusPlayerCastsDTO createPlayerDefensiveDTO(JsonNode node, String skillName) {
+    private MplusPlayerCastsDTO createPlayerDefensiveDTO(JsonNode node) {
 
         MplusPlayerCastsDTO dto = new MplusPlayerCastsDTO();
 
         dto.setType(node.path("type").asText());
         dto.setTimestamp(node.path("timestamp").asLong());
         dto.setAbilityGameID(node.path("abilityGameID").asInt());
-        dto.setSkillName(skillName);
 
         return dto;
     }
