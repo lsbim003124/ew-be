@@ -1,7 +1,6 @@
 package com.lsbim.wowlsb.service;
 
 import com.lsbim.wowlsb.dto.mplus.MplusFightsDTO;
-import com.lsbim.wowlsb.enums.Mplus;
 import com.lsbim.wowlsb.enums.dungeons.DungeonBosses;
 import com.lsbim.wowlsb.enums.dungeons.Dungeons;
 import org.springframework.stereotype.Service;
@@ -22,18 +21,6 @@ public class DungeonService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Invalid dungeon name: " + dungeonName
-                ))
-                .getId();
-    }
-
-    //    Mplus - 현재 시즌 던전목록중 하나에서 해당 던전Id 가져오기
-    public int findDungeonIdByMplus(Mplus mplus) {
-
-        return Arrays.stream(Dungeons.values())
-                .filter(d -> d.name().equals(mplus.name()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Invalid mplus: " + mplus.name()
                 ))
                 .getId();
     }

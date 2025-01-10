@@ -14,10 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -150,6 +149,10 @@ public class ProcessingService {
             // 실제 적용된 외생기목록 추가
             rankingsDTO.setTakenBuffInfo(spellService.getBySpellIds(takenSkillIds));
         }
+
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        String date = dateFormat.format(new Date());
+        rankingsDTO.setDataTime(date); // 데이터가 만들어진 시간
 
         ObjectNode objectNode = om.valueToTree(rankingsDTO);
 

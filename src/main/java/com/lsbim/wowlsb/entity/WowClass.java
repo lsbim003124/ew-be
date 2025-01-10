@@ -15,6 +15,7 @@ public class WowClass {
 
     @Id
     private int classId;
+    @Column(nullable = false)
     private String className;
 
 }

@@ -25,6 +25,7 @@ public class MplusRankingsDTO {
     private List<Spell> playerSkillInfo = new ArrayList<>();
     private Set<Integer> bossSkillInfo = new HashSet<>();
     private List<Spell> takenBuffInfo = new ArrayList<>();
+    private String dataTime;
 
     @Data
     @NoArgsConstructor

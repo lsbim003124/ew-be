@@ -15,7 +15,9 @@ public class WowSpec {
 
     @Id
     private int specId;
+    @Column(nullable = false)
     private String specName;
+    @Column(nullable = false)
     private String role;
 
 
