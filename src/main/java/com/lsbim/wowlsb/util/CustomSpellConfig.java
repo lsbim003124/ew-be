@@ -16,7 +16,10 @@ public class CustomSpellConfig {
     private final SpellRepository spellRepository;
 
     public static final Map<Integer, String> CUSTOM_SPELLS = Map.of(
-            451235,"공허의 마귀"
+            451235,"공허의 마귀",
+            452930,"악마의 생명석",
+            414658,"얼음장",
+            370564,"정지장 배출"
     );
 
     public void createCustomSpell(int spellId){

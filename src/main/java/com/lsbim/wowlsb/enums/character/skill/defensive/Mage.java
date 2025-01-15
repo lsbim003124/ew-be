@@ -11,7 +11,6 @@ public enum Mage implements SkillInfo {
     GREATER_INVISIBILITY(WowClass.MAGE, "ALL", "상급 투명화", 110959),
     MASS_BARRIER(WowClass.MAGE, "ALL", "대규모 방벽", 414660),
     ALTER_TIME(WowClass.MAGE, "ALL", "시간 돌리기", 342245),
-    ALTER_TIME_RE(WowClass.MAGE, "ALL", "시간 되돌리기", 342247), // 시돌 돌아가기
 //    비전
     PRISMATIC_BARRIER(WowClass.MAGE, "Arcane", "오색 방벽", 235450),
 //    냉기

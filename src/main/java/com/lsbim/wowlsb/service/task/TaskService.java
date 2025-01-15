@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,17 +36,18 @@ public class TaskService {
         log.info("get spec list...");
     }
 
+    @PostConstruct
+    public void initWowSpecList() {
+        loadWowSpec();
+    }
+
     @Getter
-    private int index = 14; // 13
+    private int index = 13;
 
     public void increaseSpecIndex() {
         index = (index + 1) % 39; // 39개의 전문화를 순회
     }
 
-    @PostConstruct
-    public void initWowSpecList() {
-        loadWowSpec();
-    }
 
     List<Integer> dungeonIds = Arrays.stream(Dungeons.values())
             .map(Dungeons::getId)
@@ -54,7 +56,6 @@ public class TaskService {
     @Scheduled(fixedRate = 3900000) // 1시간 5분
     public void mplusTimelineSchedul() {
 
-//        getter 메소드는 필드값만 읽어오기 때문에 메모리할당 X
 
         List<WowSpec> wowSpecList = getWowSpecList();
         String thisClass = wowSpecList.get(index).getWowClass().getClassName();
@@ -62,14 +63,15 @@ public class TaskService {
 
         log.info("processing data for class: {}, spec: {}", thisClass, thisSpec);
         increaseSpecIndex(); // 인덱스++
+        if (index > wowSpecList.size()) {
+            index = 0;
+        }
 
         try {
             for (int dungeonid : dungeonIds) {
                 String rankingsData = processingService.doProcessing(thisClass, thisSpec, dungeonid).toString();
-
                 // Map에 캐싱
                 timelineCache.putData(thisClass + "-" + thisSpec, dungeonid, rankingsData);
-
                 // DB에도 저장
                 mplusTimelineDataService.addTimelineData(thisClass, thisSpec, dungeonid, rankingsData);
             }
@@ -77,21 +79,24 @@ public class TaskService {
             log.info("ok! get " + thisClass + "-" + thisSpec + " data...");
 
             timelineCache.timelineLog();
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            log.warn("WCL API Too Many Request... >> {} {}", thisClass, thisSpec);
+
         } catch (Exception e) {
             log.error("Failed process timeline data... >> {} {}", thisClass, thisSpec, e);
         }
-
     }
 
-    public String getTimelineData(String className, String specName, int dungeonId) {
-        String timelineData = timelineCache.getData(className + "-" + specName, dungeonId);
+        public String getTimelineData (String className, String specName,int dungeonId){
+            String timelineData = timelineCache.getData(className + "-" + specName, dungeonId);
 
-        if (timelineData == null) {
-            timelineData = mplusTimelineDataService.findTimelineData(className, specName, dungeonId);
+            if (timelineData == null) {
+                timelineData = mplusTimelineDataService.findTimelineData(className, specName, dungeonId);
 
-            timelineCache.putData(className + "-" + specName, dungeonId, timelineData);
+                timelineCache.putData(className + "-" + specName, dungeonId, timelineData);
+            }
+
+            return timelineData;
         }
 
-        return timelineData;
     }
-}

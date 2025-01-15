@@ -1,6 +1,7 @@
 package com.lsbim.wowlsb.service;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -25,7 +26,17 @@ public class ApiTokenService {
     @Value("${blizzard.secret}")
     private String secret;
 
+    private String blizzardToken;
+
     public String getBlizzardToken(){
+        if(blizzardToken == null){
+            refreshToken();
+        }
+
+        return blizzardToken;
+    }
+
+    public void refreshToken(){
 //        헤더 생성
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -51,6 +62,6 @@ public class ApiTokenService {
 
         String token = response.getBody().path("access_token").asText();
 
-        return token;
+        blizzardToken = token;
     }
 }

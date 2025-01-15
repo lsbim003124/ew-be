@@ -1,10 +1,14 @@
 package com.lsbim.wowlsb.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -31,5 +35,10 @@ public class MplusTimelineData {
     @Column(columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private String timelineData;
+
+    @CreationTimestamp
+    @Column(nullable = false,updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+    private LocalDateTime createdDate;
 
 }

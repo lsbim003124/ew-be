@@ -10,9 +10,9 @@ public enum Evoker implements SkillInfo{
     RESCUE(WowClass.EVOKER, "ALL", "구출", 370665),
     RENEWING_BLAZE(WowClass.EVOKER, "ALL", "소생의 불길", 374348),
     //    증강
-//    PRISMATIC_BARRIER(WowClass.EVOKER, "Augmentation", "오색 방벽", 235450),
+
     //    황폐
-//    ICE_BARRIER(WowClass.EVOKER, "Devastation", "얼음 보호막", 11426),
+
     //    보존
     STASIS_START(WowClass.EVOKER, "Preservation", "정지장", 370537), // 저장
     STASIS_END(WowClass.EVOKER, "Preservation", "정지장", 370564), // 배출

@@ -11,12 +11,12 @@ public enum Monk implements SkillInfo{
     TOUCH_OF_KARMA(WowClass.MONK, "Windwalker", "업보의 손아귀", 125174),
     //  양조
     DAMPEN_HARM(WowClass.MONK, "Brewmaster", "해악 감퇴", 122278),
-    INVOKE_NIUZAO(WowClass.MONK, "Brewmaster", "흑우 니우짜오의 원령", 132578),
+//    INVOKE_NIUZAO(WowClass.MONK, "Brewmaster", "흑우 니우짜오의 원령", 132578),
     ZEN_MEDITATION(WowClass.MONK, "Brewmaster", "명상", 115176),
-    CELESTIAL_BREW(WowClass.MONK, "Brewmaster", "천신주", 322507),
+//    CELESTIAL_BREW(WowClass.MONK, "Brewmaster", "천신주", 322507),
     //  운무
-    INVOKE_CHI_JI(WowClass.MONK, "Mistweaver", "주학 츠지의 원령", 325197),
-    INVOKE_YU_LON(WowClass.MONK, "Mistweaver", "옥룡 위론의 원령", 322118),
+//    INVOKE_CHI_JI(WowClass.MONK, "Mistweaver", "주학 츠지의 원령", 325197),
+//    INVOKE_YU_LON(WowClass.MONK, "Mistweaver", "옥룡 위론의 원령", 322118),
     RESTORAL(WowClass.MONK, "Mistweaver", "회복", 388615),
     REVIVAL(WowClass.MONK, "Mistweaver", "재활", 115310),
     LIFE_COCOON(WowClass.MONK, "Mistweaver", "기의 고치", 116849);
