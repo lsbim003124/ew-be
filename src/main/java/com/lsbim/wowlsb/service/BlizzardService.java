@@ -69,6 +69,8 @@ public class BlizzardService {
             String spellName = response.getBody().path("name").asText();
 
             return spellName;
+        } catch (HttpClientErrorException.NotFound e){
+            return null;
         }
 
     }

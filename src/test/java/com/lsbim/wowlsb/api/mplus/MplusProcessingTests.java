@@ -8,6 +8,7 @@ import com.lsbim.wowlsb.dto.mplus.MplusPlayerCastsDTO;
 import com.lsbim.wowlsb.dto.mplus.MplusRankingsDTO;
 import com.lsbim.wowlsb.service.*;
 import com.lsbim.wowlsb.service.events.CastsService;
+import com.lsbim.wowlsb.service.repository.MplusTimelineDataService;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @SpringBootTest
@@ -26,7 +29,7 @@ public class MplusProcessingTests {
 //    데이터 파일로 저장해서 뽑기는 Mplus File Save Tests로
 
     @Autowired
-    private ProcessingService processingService;
+    private MplusTimelineDataService mplusTimelineDataService;
 
     @Autowired
     private PlayerService playerService;
@@ -286,7 +289,6 @@ public class MplusProcessingTests {
         int actorId = playerService.getMplusActorId(code, fightId, className, spec, name);
 
 
-
         for (MplusFightsDTO.Pull pull : fightsDTO.getPulls()) {
             if (pull.getEvents() == null) {
                 pull.setEvents(new MplusFightsDTO.Pull.Events()); // Events 객체 초기화
@@ -336,5 +338,51 @@ public class MplusProcessingTests {
         log.info(objectNode);
     }
 
+    // 큐 테스트용
+    @Test
+    public void processingTest5() {
+
+        int dungeonId1 = 12669;
+        int dungeonId2 = 12662;
+        int dungeonId3 = 12660;
+        int dungeonId4 = 12652;
+        int dungeonId5 = 62290;
+        int dungeonId6 = 62286;
+        int dungeonId7 = 61822;
+        int dungeonId8 = 60670;
+        String className = "Mage";
+        String spec = "Fire";
+
+
+        CompletableFuture<String> timelineFuture1 = CompletableFuture.supplyAsync(() ->
+                mplusTimelineDataService.getTimelineData(className, spec, dungeonId1));
+        CompletableFuture<String> timelineFuture2 = CompletableFuture.supplyAsync(() ->
+                mplusTimelineDataService.getTimelineData(className, spec, dungeonId2));
+        CompletableFuture<String> timelineFuture3 = CompletableFuture.supplyAsync(() ->
+                mplusTimelineDataService.getTimelineData(className, spec, dungeonId3));
+
+        // 모든 비동기 작업이 완료되기를 기다림
+        CompletableFuture.allOf(timelineFuture1, timelineFuture2, timelineFuture3).join();
+
+        String timelineData1 = null;
+        String timelineData2 = null;
+        String timelineData3 = null;
+        try {
+            timelineData1 = timelineFuture1.get();
+            timelineData2 = timelineFuture2.get();
+            timelineData3 = timelineFuture3.get();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        log.info("TimelineData1 Length: " + timelineData1.length());
+        log.info("TimelineData2 Length: " + timelineData2.length());
+        log.info("TimelineData3 Length: " + timelineData3.length());
+
+
+    }
 
 }

@@ -2,17 +2,20 @@ package com.lsbim.wowlsb.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.lsbim.wowlsb.cache.TimelineCache;
 import com.lsbim.wowlsb.dto.mplus.MplusEnemyCastsDTO;
 import com.lsbim.wowlsb.dto.mplus.MplusFightsDTO;
 import com.lsbim.wowlsb.dto.mplus.MplusPlayerCastsDTO;
 import com.lsbim.wowlsb.dto.mplus.MplusRankingsDTO;
 import com.lsbim.wowlsb.service.events.BuffsService;
 import com.lsbim.wowlsb.service.events.CastsService;
+import com.lsbim.wowlsb.service.repository.MplusTimelineDataService;
 import com.lsbim.wowlsb.service.repository.SpellService;
+import com.lsbim.wowlsb.service.queue.QueueService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -21,31 +24,19 @@ import java.util.stream.Collectors;
 
 @Service
 @Log4j2
+@RequiredArgsConstructor
 public class ProcessingService {
 
-    @Autowired
-    private PlayerService playerService;
-
-    @Autowired
-    private DungeonService dungeonService;
-
-    @Autowired
-    private CastsService castsService;
-
-    @Autowired
-    private FightsService fightsService;
-
-    @Autowired
-    private BuffsService buffsService;
-
-    @Autowired
-    private RankingsService rankingsService;
+    private final PlayerService playerService;
+    private final DungeonService dungeonService;
+    private final CastsService castsService;
+    private final FightsService fightsService;
+    private final BuffsService buffsService;
+    private final RankingsService rankingsService;
+    private final SpellService spellService;
 
     @Autowired
     private ObjectMapper om;
-
-    @Autowired
-    private SpellService spellService;
 
 
     public ObjectNode doProcessing(String className, String spec, int dungeonId) {
@@ -68,7 +59,7 @@ public class ProcessingService {
 
             int actorId = playerService.getMplusActorId(code, fightId, className, spec, name);
 
-            for (MplusFightsDTO.Pull pull : fightsDTO.getPulls()) {
+            for (MplusFightsDTO.Pull pull : fightsDTO.getPulls()) { // 보스 마리 당 pull 단위로 쪼개진 상태
                 if (pull.getEvents() == null) {
                     pull.setEvents(new MplusFightsDTO.Pull.Events()); // Events 객체 초기화
                 }
@@ -84,6 +75,9 @@ public class ProcessingService {
                                 pull.getEndTime(),
                                 bossNpcId, actorId
                         );
+                        if(enemyCastsDTO.isEmpty() || enemyCastsDTO.size() == 0){
+                            return null;
+                        }
                         allEnemyCasts.addAll(enemyCastsDTO); // 보스 개인의 스킬 목록을 옮겨담기
                     }
                     pull.getEvents().setEnemyCastsDTO(allEnemyCasts); // 모든 보스 스킬 등록
@@ -150,12 +144,9 @@ public class ProcessingService {
             rankingsDTO.setTakenBuffInfo(spellService.getBySpellIds(takenSkillIds));
         }
 
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        String date = dateFormat.format(new Date());
-        rankingsDTO.setDataTime(date); // 데이터가 만들어진 시간
-
         ObjectNode objectNode = om.valueToTree(rankingsDTO);
 
         return objectNode;
     }
+
 }

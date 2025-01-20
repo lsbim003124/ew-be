@@ -1,4 +1,4 @@
-package com.lsbim.wowlsb.dto.controller.advice;
+package com.lsbim.wowlsb.controller.advice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
