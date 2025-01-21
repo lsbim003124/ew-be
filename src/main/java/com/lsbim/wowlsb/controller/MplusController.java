@@ -32,7 +32,7 @@ public class MplusController {
             return ResponseEntity.status(HttpStatus.OK)
                     .body("timeline data is null");
         } catch (Exception e) {
-            log.warn("get timeline data error => {}", e);
+            log.warn("get timeline data error: {}", e);
             return ResponseEntity.status(HttpStatus.OK)
                     .body("Failed to fetch timeline data");
         }

@@ -8,7 +8,7 @@ public enum Monk implements SkillInfo{
     FORTIFYING_BREW(WowClass.MONK, "ALL", "강화주", 115203),
     DIFFUSE_MAGIC(WowClass.MONK, "ALL", "마법 해소", 122783),
     //  풍운
-    TOUCH_OF_KARMA(WowClass.MONK, "Windwalker", "업보의 손아귀", 125174),
+    TOUCH_OF_KARMA(WowClass.MONK, "Windwalker", "업보의 손아귀", 122470),
     //  양조
     DAMPEN_HARM(WowClass.MONK, "Brewmaster", "해악 감퇴", 122278),
 //    INVOKE_NIUZAO(WowClass.MONK, "Brewmaster", "흑우 니우짜오의 원령", 132578),

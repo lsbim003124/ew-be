@@ -48,9 +48,11 @@ public class MplusTimelineDataService {
         if (timelineData == null) {
             MplusTimelineDataDTO dto = findTimelineData(className, specName, dungeonId);
 
-            if (dto != null && isDataExpired(dto.getCreatedDate())) {
+            if (dto != null && !isDataExpired(dto.getCreatedDate())) {
                 timelineData = dto.getTimelineData();
+
             } else {
+                log.info("Need new data this DTO: {}", dto);
                 timelineData = queueService.enqueueTask(className, specName, dungeonId);
                 if (timelineData == null) {
                     return null;

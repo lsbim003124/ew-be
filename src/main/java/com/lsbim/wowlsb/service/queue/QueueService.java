@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -88,18 +89,19 @@ public class QueueService {
         log.info("===============================");
         while (isRunning) {
             try {
+                log.info("Queue is currently {}", taskQueue);
                 TaskRequest task = taskQueue.poll(1, TimeUnit.SECONDS);
                 if (task == null) {
                     // 1초 동안 새 작업이 없으면 스레드 종료
                     synchronized (this) {
                         if (taskQueue.isEmpty()) {
+                            log.info("Queue work end.");
                             isRunning = false;
                             break;
                         }
                     }
                     continue;
                 }
-                log.info("Queue is currently {}", taskQueue);
                 log.info("Queue Poll {}", task);
                 try {
                     Thread.sleep(1000); // 1초 지연 (필요에 따라 조정)
@@ -112,17 +114,32 @@ public class QueueService {
                     ).toString();
 
                     task.getFuture().complete(result); // 해당 코드 호출하는 순간 enqueueTask 리턴
+
+                } catch (HttpClientErrorException.TooManyRequests e) {
+                    log.error("Too many request task: ", e);
+
+                    ScheduledExecutorService tempScheduler = Executors.newScheduledThreadPool(1);
+                    tempScheduler.schedule(() -> {
+                        log.info("Retrying task after 1 hour: {}", task);
+                        taskQueue.offer(task);
+                        startWorker();
+
+                        tempScheduler.shutdown();
+                    }, 1, TimeUnit.HOURS);
+
                 } catch (Exception e) {
                     log.error("Error processing task: ", e);
                     task.getFuture().completeExceptionally(e); // 에러를 future에 전달?
                 } finally {
-//                    작업 종료 시 해당 파라미터 Set에서 제거
-                    TaskKey completeTaskKey = new TaskKey(
-                            task.className,
-                            task.specName,
-                            task.dungeonId
-                    );
-                    taskSet.remove(completeTaskKey);
+//                    작업 종료 시 해당 파라미터 Set에서 제거, 예외가 발생하지 않으면 Set에서 제거
+                    if (!task.getFuture().isCompletedExceptionally()) {
+                        TaskKey completeTaskKey = new TaskKey(
+                                task.className,
+                                task.specName,
+                                task.dungeonId
+                        );
+                        taskSet.remove(completeTaskKey);
+                    }
                 }
             } catch (InterruptedException e) {
                 log.error("Worker thread interrupted: ", e);
