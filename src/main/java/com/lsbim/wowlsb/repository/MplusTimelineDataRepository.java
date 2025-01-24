@@ -14,7 +14,7 @@ public interface MplusTimelineDataRepository extends JpaRepository<MplusTimeline
             "WHERE mt.className = :className AND mt.specName = :specName AND mt.dungeonId = :dungeonId " +
             "ORDER BY mt.dataId DESC " +
             "LIMIT 1")
-    MplusTimelineDataDTO findTimelineDataByClassNameAndSpecNameAndDungeonId(@Param("className") String className // 메소드명 변경 예정
+    MplusTimelineDataDTO findTimelineDataByClassNameAndSpecNameAndDungeonId(@Param("className") String className // 
             , @Param("specName") String specName
             , @Param("dungeonId") int dungeonId);
 }

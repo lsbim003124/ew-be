@@ -1,6 +1,7 @@
 package com.lsbim.wowlsb.service.repository;
 
 import com.lsbim.wowlsb.cache.TimelineCache;
+import com.lsbim.wowlsb.dto.ApiResponseDTO;
 import com.lsbim.wowlsb.dto.mplus.MplusTimelineDataDTO;
 import com.lsbim.wowlsb.entity.MplusTimelineData;
 import com.lsbim.wowlsb.repository.MplusTimelineDataRepository;
@@ -11,6 +12,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +44,7 @@ public class MplusTimelineDataService {
         return findData;
     }
 
-    public String getTimelineData(String className, String specName, int dungeonId) {
+    public ApiResponseDTO getTimelineData(String className, String specName, int dungeonId) {
         String timelineData = timelineCache.getData(className + "-" + specName + "-" + dungeonId);
 
         if (timelineData == null) {
@@ -52,19 +54,32 @@ public class MplusTimelineDataService {
                 timelineData = dto.getTimelineData();
 
             } else {
-                log.info("Need new data this DTO: {}", dto);
-                timelineData = queueService.enqueueTask(className, specName, dungeonId);
-                if (timelineData == null) {
-                    return null;
+                if (queueService.isTaskInSet(className, specName, dungeonId)) {
+                    log.info("This data updating now: {}, {}, {}", className, specName, dungeonId);
+                    return new ApiResponseDTO("UPDATING", null);
                 }
-//                갱신한 데이터 DB에 저장
-                addTimelineData(className, specName, dungeonId, timelineData);
+                log.info("Need new data this DTO: {}", dto);
+
+//                비동기 작업. 즉시 클라이언트로 UPDATING 상태를 반환하기 위함
+                CompletableFuture.supplyAsync(() ->
+                        queueService.enqueueTask(className, specName, dungeonId)
+                ).thenAccept(result -> {
+                    if (result != null) {
+                        addTimelineData(className, specName, dungeonId, result);
+                        timelineCache.putData(className + "-" + specName + "-" + dungeonId, result);
+                    }
+                }).exceptionally(e -> {
+                    log.error("Error during task: {}", e);
+                    return null;
+                });
+
+                return new ApiResponseDTO("UPDATING", null);
             }
 //              갱신한 데이터 캐싱
             timelineCache.putData(className + "-" + specName + "-" + dungeonId, timelineData);
         }
 
-        return timelineData;
+        return new ApiResponseDTO("COMPLETE", timelineData);
     }
 
     private boolean isDataExpired(LocalDateTime createdDate) {

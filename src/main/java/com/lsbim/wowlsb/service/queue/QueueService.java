@@ -22,7 +22,7 @@ public class QueueService {
     private final ProcessingService processingService;
     //    공유자원 큐
     private final BlockingQueue<TaskRequest> taskQueue = new LinkedBlockingQueue<>(20);
-    private final Set<TaskKey> taskSet = new HashSet<>();
+    private final Set<String> taskSet = new HashSet<>();
     //    스레드 상태
     private volatile boolean isRunning = false;
     //        단일 스레드
@@ -38,18 +38,13 @@ public class QueueService {
         private CompletableFuture<String> future; // 비동기로 응답하기 위한 Future
     }
 
-    // 중복 파라미터 판별용 객체
-    @Getter
-    @AllArgsConstructor
-    public static class TaskKey {
-        private String className;
-        private String specName;
-        private int dungeonId;
+    private String createTaskKey(String className, String specName, int dungeonId) {
+        return className + "-" + specName + "-" + dungeonId;
     }
 
     // 새로운 작업을 큐에 추가 (생산자)**
     public String enqueueTask(String className, String specName, int dungeonId) {
-        TaskKey newKey = new TaskKey(className, specName, dungeonId);
+        String newKey = createTaskKey(className, specName, dungeonId);
 //        중복체크
         if (taskSet.contains(newKey)) {
             log.warn("Duplicate task data: {}", newKey);
@@ -133,7 +128,7 @@ public class QueueService {
                 } finally {
 //                    작업 종료 시 해당 파라미터 Set에서 제거, 예외가 발생하지 않으면 Set에서 제거
                     if (!task.getFuture().isCompletedExceptionally()) {
-                        TaskKey completeTaskKey = new TaskKey(
+                        String completeTaskKey = createTaskKey(
                                 task.className,
                                 task.specName,
                                 task.dungeonId
@@ -147,6 +142,10 @@ public class QueueService {
                 break;
             }
         }
+    }
+
+    public boolean isTaskInSet(String className, String specName, int dungeonId) {
+        return taskSet.contains(createTaskKey(className, specName, dungeonId));
     }
 
     // 어플리케이션 서비스 종료 시 정리

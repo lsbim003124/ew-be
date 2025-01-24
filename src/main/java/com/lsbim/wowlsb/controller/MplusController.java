@@ -1,5 +1,6 @@
 package com.lsbim.wowlsb.controller;
 
+import com.lsbim.wowlsb.dto.ApiResponseDTO;
 import com.lsbim.wowlsb.service.ProcessingService;
 import com.lsbim.wowlsb.service.repository.MplusTimelineDataService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class MplusController {
                                  @RequestParam String specName,
                                  @RequestParam int dungeonId) {
         try {
-            String data = mplusTimelineDataService.getTimelineData(className, specName, dungeonId);
+            ApiResponseDTO data = mplusTimelineDataService.getTimelineData(className, specName, dungeonId);
 
             log.info("get timeline... class: {}, spec: {}, dungeonId: {}", className, specName, dungeonId);
 

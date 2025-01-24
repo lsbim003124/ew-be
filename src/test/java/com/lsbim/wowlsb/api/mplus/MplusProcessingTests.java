@@ -354,7 +354,7 @@ public class MplusProcessingTests {
         String spec = "Fire";
 
 
-        CompletableFuture<String> timelineFuture1 = CompletableFuture.supplyAsync(() ->
+/*        CompletableFuture<String> timelineFuture1 = CompletableFuture.supplyAsync(() ->
                 mplusTimelineDataService.getTimelineData(className, spec, dungeonId1));
         CompletableFuture<String> timelineFuture2 = CompletableFuture.supplyAsync(() ->
                 mplusTimelineDataService.getTimelineData(className, spec, dungeonId2));
@@ -380,7 +380,7 @@ public class MplusProcessingTests {
 
         log.info("TimelineData1 Length: " + timelineData1.length());
         log.info("TimelineData2 Length: " + timelineData2.length());
-        log.info("TimelineData3 Length: " + timelineData3.length());
+        log.info("TimelineData3 Length: " + timelineData3.length());*/
 
 
     }
