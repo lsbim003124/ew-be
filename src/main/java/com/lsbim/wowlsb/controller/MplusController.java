@@ -27,10 +27,7 @@ public class MplusController {
                                  @RequestParam int dungeonId) {
         try {
             if (bucket.tryConsume(1)) {
-
                 ApiResponseDTO data = mplusTimelineDataService.getTimelineData(className, specName, dungeonId);
-
-                log.info("get timeline... class: {}, spec: {}, dungeonId: {}", className, specName, dungeonId);
 
                 return ResponseEntity.ok(data);
             } else {

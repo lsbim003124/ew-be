@@ -45,41 +45,53 @@ public class MplusTimelineDataService {
     }
 
     public ApiResponseDTO getTimelineData(String className, String specName, int dungeonId) {
-        String timelineData = timelineCache.getData(className + "-" + specName + "-" + dungeonId);
+        String cacheKey = className + "-" + specName + "-" + dungeonId;
+        String timelineData = timelineCache.getData(cacheKey);
 
-        if (timelineData == null) {
-            MplusTimelineDataDTO dto = findTimelineData(className, specName, dungeonId);
-
-            if (dto != null && !isDataExpired(dto.getCreatedDate())) {
-                timelineData = dto.getTimelineData();
-
-            } else {
-                if (queueService.isTaskInSet(className, specName, dungeonId)) {
-                    log.info("This data updating now: {}, {}, {}", className, specName, dungeonId);
-                    return new ApiResponseDTO("UPDATING", null);
-                }
-                log.info("Need new data this DTO: {}", dto);
-
-//                비동기 작업. 즉시 클라이언트로 UPDATING 상태를 반환하기 위함
-                CompletableFuture.supplyAsync(() ->
-                        queueService.enqueueTask(className, specName, dungeonId)
-                ).thenAccept(result -> {
-                    if (result != null) {
-                        addTimelineData(className, specName, dungeonId, result);
-                        timelineCache.putData(className + "-" + specName + "-" + dungeonId, result);
-                    }
-                }).exceptionally(e -> {
-                    log.error("Error during task: {}", e);
-                    return null;
-                });
-
-                return new ApiResponseDTO("UPDATING", null);
-            }
-//              갱신한 데이터 캐싱
-            timelineCache.putData(className + "-" + specName + "-" + dungeonId, timelineData);
+        // 캐시에 데이터가 있으면 반환
+        if (timelineData != null) {
+            return new ApiResponseDTO("COMPLETE", timelineData);
         }
 
+        // DB에서 데이터 조회
+        MplusTimelineDataDTO dto = findTimelineData(className, specName, dungeonId);
+
+        // 데이터가 없는 경우
+        if (dto == null) {
+            scheduleDataUpdate(className, specName, dungeonId, cacheKey);
+            return new ApiResponseDTO("UPDATING", null);
+        }
+
+        // 데이터가 오래된 경우, DTO의 데이터를 반환하고 비동기 데이터 갱신
+        timelineData = dto.getTimelineData();
+        if (isDataExpired(dto.getCreatedDate())) {
+            scheduleDataUpdate(className, specName, dungeonId, cacheKey);
+        }
+
+        // DTO 데이터를 캐시에 저장하고 데이터 반환
+        timelineCache.putData(cacheKey, timelineData);
         return new ApiResponseDTO("COMPLETE", timelineData);
+    }
+
+    private void scheduleDataUpdate(String className, String specName, int dungeonId, String cacheKey) {
+        // 이미 업데이트 중인 경우 중복 업데이트 방지
+        if (queueService.isTaskInSet(className, specName, dungeonId)) {
+            log.info("This data updating now: {}, {}, {}", className, specName, dungeonId);
+            return;
+        }
+
+        CompletableFuture.supplyAsync(() ->
+                queueService.enqueueTask(className, specName, dungeonId)
+        ).thenAccept(result -> {
+            if (result != null) {
+                addTimelineData(className, specName, dungeonId, result);
+                timelineCache.putData(cacheKey, result);
+                log.info("Data update success: {}", cacheKey);
+            }
+        }).exceptionally(e -> {
+            log.error("Error during task: {}", e);
+            return null;
+        });
     }
 
     private boolean isDataExpired(LocalDateTime createdDate) {

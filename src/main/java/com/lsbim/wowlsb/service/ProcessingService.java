@@ -49,90 +49,101 @@ public class ProcessingService {
 
 //        1~10등 모든 풀링, 모든 생존기재 캐스트까지 요청, **보스는 1등만!!!**
         for (int i = 0; i < rankings.size(); i++) {
-            MplusRankingsDTO.Ranking ranking = rankings.get(i);
-            String name = ranking.getName();
-            String code = ranking.getReport().getCode();
-            int fightId = ranking.getReport().getFightID();
+            try {
+                MplusRankingsDTO.Ranking ranking = rankings.get(i);
+                String name = ranking.getName();
+                String code = ranking.getReport().getCode();
+                int fightId = ranking.getReport().getFightID();
 
-            MplusFightsDTO fightsDTO = fightsService.getMplusFights(code, fightId);
-            ranking.setMplusFightsDTO(fightsDTO);
-
-            int actorId = playerService.getMplusActorId(code, fightId, className, spec, name);
-
-            for (MplusFightsDTO.Pull pull : fightsDTO.getPulls()) { // 보스 마리 당 pull 단위로 쪼개진 상태
-                if (pull.getEvents() == null) {
-                    pull.setEvents(new MplusFightsDTO.Pull.Events()); // Events 객체 초기화
+                MplusFightsDTO fightsDTO = fightsService.getMplusFights(code, fightId);
+                if (fightsDTO == null) {
+                    log.warn("Failed get fights data code: {}, fightId: {} skip this index", code, fightId);
+                    continue;
                 }
 
-                // 인덱스가 0일 때만 보스 캐스트 가져오기
-                if (i == 0) {
-                    List<MplusEnemyCastsDTO> allEnemyCasts = new ArrayList<>();
-                    List<Integer> bossNpcIds = dungeonService.findBossIdByList(pull.getEnemyNpcs(), dungeonId);
-                    for (int bossNpcId : bossNpcIds) { // 보스가 여럿일때를 가장
-                        List<MplusEnemyCastsDTO> enemyCastsDTO = castsService.getEnemyCasts(
-                                code, fightId,
-                                pull.getStartTime(),
-                                pull.getEndTime(),
-                                bossNpcId, actorId
-                        );
-                        if(enemyCastsDTO.isEmpty() || enemyCastsDTO.size() == 0){
-                            return null;
+                ranking.setMplusFightsDTO(fightsDTO);
+
+                int actorId = playerService.getMplusActorId(code, fightId, className, spec, name);
+
+                for (MplusFightsDTO.Pull pull : fightsDTO.getPulls()) { // 보스 마리 당 pull 단위로 쪼개진 상태
+                    if (pull.getEvents() == null) {
+                        pull.setEvents(new MplusFightsDTO.Pull.Events()); // Events 객체 초기화
+                    }
+
+                    // 인덱스가 0일 때만 보스 캐스트 가져오기
+                    if (i == 0) {
+                        List<MplusEnemyCastsDTO> allEnemyCasts = new ArrayList<>();
+                        List<Integer> bossNpcIds = dungeonService.findBossIdByList(pull.getEnemyNpcs(), dungeonId);
+                        for (int bossNpcId : bossNpcIds) { // 보스가 여럿일때를 가장
+                            List<MplusEnemyCastsDTO> enemyCastsDTO = castsService.getEnemyCasts(
+                                    code, fightId,
+                                    pull.getStartTime(),
+                                    pull.getEndTime(),
+                                    bossNpcId, actorId
+                            );
+                            if (enemyCastsDTO.isEmpty() || enemyCastsDTO.size() == 0) {
+                                log.warn("Failed get enemy casts bossNpcId: {}. skip this boss.", bossNpcId);
+                                continue;
+                            }
+                            allEnemyCasts.addAll(enemyCastsDTO); // 보스 개인의 스킬 목록을 옮겨담기
                         }
-                        allEnemyCasts.addAll(enemyCastsDTO); // 보스 개인의 스킬 목록을 옮겨담기
-                    }
-                    pull.getEvents().setEnemyCastsDTO(allEnemyCasts); // 모든 보스 스킬 등록
+                        pull.getEvents().setEnemyCastsDTO(allEnemyCasts); // 모든 보스 스킬 등록
 
-                    // 실제로 사용한 주문만 Set에 넣기
-                    if (allEnemyCasts.size() > 0) { // 배열이 유효하면
-                        usedBossSkillIds.addAll(allEnemyCasts.stream()
-                                .map(cast -> cast.getAbilityGameID())
-                                .collect(Collectors.toSet()));
+                        // 실제로 사용한 주문만 Set에 넣기
+                        if (allEnemyCasts.size() > 0) { // 배열이 유효하면
+                            usedBossSkillIds.addAll(allEnemyCasts.stream()
+                                    .map(cast -> cast.getAbilityGameID())
+                                    .collect(Collectors.toSet()));
+                        }
+
+                        if (usedBossSkillIds.size() > 0) {
+                            //        스킬목록 추가
+                            rankingsDTO.setBossSkillInfo(usedBossSkillIds);
+                        }
                     }
 
-                    if (usedBossSkillIds.size() > 0) {
-                        //        스킬목록 추가
-                        rankingsDTO.setBossSkillInfo(usedBossSkillIds);
-                    }
-                }
-
-                // 받은 외생기 가져오기
-                List<List<MplusPlayerCastsDTO>> takenBuffs = buffsService.getTakenBuffs(
-                        code, fightId
-                        , pull.getStartTime()
-                        , pull.getEndTime()
-                        , actorId);
-                pull.getEvents().setPlayerTakenDefensiveDTO(takenBuffs);
+                    // 받은 외생기 가져오기
+                    List<List<MplusPlayerCastsDTO>> takenBuffs = buffsService.getTakenBuffs(
+                            code, fightId
+                            , pull.getStartTime()
+                            , pull.getEndTime()
+                            , actorId);
+                    pull.getEvents().setPlayerTakenDefensiveDTO(takenBuffs);
 
 //                해당 직업의 생존기 목록불러오기
-                List<Integer> defList = playerService.findDefensive(className, spec);
+                    List<Integer> defList = playerService.findDefensive(className, spec);
 
 //                생존기 주문번호에 해당하는 cast 기록 가져오기
-                List<List<MplusPlayerCastsDTO>> defensiveCasts = castsService.getPlayerDefensiveCasts(
-                        code, fightId
-                        , pull.getStartTime()
-                        , pull.getEndTime()
-                        , actorId
-                        , defList, className);
+                    List<List<MplusPlayerCastsDTO>> defensiveCasts = castsService.getPlayerDefensiveCasts(
+                            code, fightId
+                            , pull.getStartTime()
+                            , pull.getEndTime()
+                            , actorId
+                            , defList, className);
 
-                pull.getEvents().setPlayerDefensiveCastsDTO(defensiveCasts);
+                    pull.getEvents().setPlayerDefensiveCastsDTO(defensiveCasts);
 
-                // 실제로 사용한 주문만 Set에 넣기
-                for (List<MplusPlayerCastsDTO> defensiveCast : defensiveCasts) {
-                    if (defensiveCast.size() > 0) { // 배열이 유효하면
-                        usedPlayerSkillIds.addAll(defensiveCast.stream()
-                                .map(cast -> cast.getAbilityGameID())
-                                .collect(Collectors.toSet()));
+                    // 실제로 사용한 주문만 Set에 넣기
+                    for (List<MplusPlayerCastsDTO> defensiveCast : defensiveCasts) {
+                        if (defensiveCast.size() > 0) { // 배열이 유효하면
+                            usedPlayerSkillIds.addAll(defensiveCast.stream()
+                                    .map(cast -> cast.getAbilityGameID())
+                                    .collect(Collectors.toSet()));
+                        }
+                    }
+
+                    // 받은 외생기 주문 Set에 넣기
+                    for (List<MplusPlayerCastsDTO> buff : takenBuffs) {
+                        if (buff.size() > 0) { // 배열이 유효하면
+                            takenSkillIds.addAll(buff.stream()
+                                    .map(cast -> cast.getAbilityGameID())
+                                    .collect(Collectors.toSet()));
+                        }
                     }
                 }
-
-                // 받은 외생기 주문 Set에 넣기
-                for (List<MplusPlayerCastsDTO> buff : takenBuffs) {
-                    if (buff.size() > 0) { // 배열이 유효하면
-                        takenSkillIds.addAll(buff.stream()
-                                .map(cast -> cast.getAbilityGameID())
-                                .collect(Collectors.toSet()));
-                    }
-                }
+            } catch (Exception e) {
+                log.error("Error processing ranking index {}: {}", i, e.getMessage());
+                continue;
             }
         }
         if (usedPlayerSkillIds.size() > 0) {
