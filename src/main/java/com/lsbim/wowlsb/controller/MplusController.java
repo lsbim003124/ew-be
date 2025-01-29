@@ -3,6 +3,7 @@ package com.lsbim.wowlsb.controller;
 import com.lsbim.wowlsb.dto.ApiResponseDTO;
 import com.lsbim.wowlsb.service.ProcessingService;
 import com.lsbim.wowlsb.service.repository.MplusTimelineDataService;
+import com.lsbim.wowlsb.service.validation.MplusValidationService;
 import io.github.bucket4j.Bucket;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -19,12 +20,19 @@ import org.springframework.web.server.ResponseStatusException;
 public class MplusController {
 
     private final MplusTimelineDataService mplusTimelineDataService;
+    private final MplusValidationService mplusValidationService;
     private final Bucket bucket;
 
     @GetMapping("timeline")
     public ResponseEntity<?> get(@RequestParam String className,
                                  @RequestParam String specName,
                                  @RequestParam int dungeonId) {
+
+        if (!mplusValidationService.validateTimelineParams(className, specName, dungeonId)) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body("Invalid params");
+        }
+
         try {
             if (bucket.tryConsume(1)) {
                 ApiResponseDTO data = mplusTimelineDataService.getTimelineData(className, specName, dungeonId);
@@ -42,5 +50,11 @@ public class MplusController {
             return ResponseEntity.status(HttpStatus.OK)
                     .body("Failed to fetch timeline data");
         }
+    }
+
+    private boolean isMplusTimelineParamsOk(String className, String specName, int dungeonId){
+
+
+        return false;
     }
 }

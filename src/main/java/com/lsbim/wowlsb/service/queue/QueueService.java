@@ -88,7 +88,7 @@ public class QueueService {
                 TaskRequest task = taskQueue.poll(1, TimeUnit.SECONDS);
                 if (task == null) {
                     // 1초 동안 새 작업이 없으면 스레드 종료
-                    synchronized (this) {
+                    synchronized (this) { // 락이 걸림. 다른 스레드가 끼어들지 못 함.
                         if (taskQueue.isEmpty()) {
                             log.info("Queue work end.");
                             isRunning = false;
