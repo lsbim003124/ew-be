@@ -1,4 +1,4 @@
-package com.lsbim.wowlsb.service;
+package com.lsbim.wowlsb.service.wcl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

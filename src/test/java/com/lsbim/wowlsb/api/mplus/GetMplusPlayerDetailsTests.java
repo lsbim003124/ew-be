@@ -3,7 +3,7 @@ package com.lsbim.wowlsb.api.mplus;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.lsbim.wowlsb.service.PlayerService;
+import com.lsbim.wowlsb.service.wcl.PlayerService;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

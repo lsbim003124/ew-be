@@ -1,4 +1,4 @@
-package com.lsbim.wowlsb.service;
+package com.lsbim.wowlsb.service.wcl;
 
 import com.lsbim.wowlsb.dto.mplus.MplusFightsDTO;
 import com.lsbim.wowlsb.enums.dungeons.DungeonBosses;

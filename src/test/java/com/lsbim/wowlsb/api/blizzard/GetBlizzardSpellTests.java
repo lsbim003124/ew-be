@@ -1,11 +1,9 @@
 package com.lsbim.wowlsb.api.blizzard;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lsbim.wowlsb.entity.Spell;
 import com.lsbim.wowlsb.repository.SpellRepository;
-import com.lsbim.wowlsb.service.BlizzardService;
-import lombok.Builder;
+import com.lsbim.wowlsb.service.blizzard.BlizzardService;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -2,12 +2,11 @@ package com.lsbim.wowlsb.service.repository;
 
 import com.lsbim.wowlsb.entity.Spell;
 import com.lsbim.wowlsb.repository.SpellRepository;
-import com.lsbim.wowlsb.service.BlizzardService;
+import com.lsbim.wowlsb.service.blizzard.BlizzardService;
 import com.lsbim.wowlsb.util.CustomSpellConfig;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;

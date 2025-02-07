@@ -1,6 +1,7 @@
-package com.lsbim.wowlsb.service;
+package com.lsbim.wowlsb.service.blizzard;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.lsbim.wowlsb.service.ApiTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

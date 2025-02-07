@@ -11,7 +11,7 @@ public enum Spec {
     PROTECTION_WARRIOR(WowClass.WARRIOR, "Protection", Role.TANKS),
 
     // 사냥꾼 - HUNTER
-    BEAST_MASTERY(WowClass.HUNTER, "Beast Mastery", Role.DPS),
+    BEAST_MASTERY(WowClass.HUNTER, "BeastMastery", Role.DPS),
     MARKSMANSHIP(WowClass.HUNTER, "Marksmanship", Role.DPS),
     SURVIVAL(WowClass.HUNTER, "Survival", Role.DPS),
 

@@ -39,10 +39,13 @@ public class MplusController {
 
                 return ResponseEntity.ok(data);
             } else {
-                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS);
+                log.info("Rate limit exceeded request - className: {}, specName: {}, dungeonId: {}"
+                        , className, specName, dungeonId);
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body("Too many request");
             }
         } catch (NullPointerException e) {
-            log.warn("timeline data is null");
+            log.warn("timeline data is null", e);
             return ResponseEntity.status(HttpStatus.OK)
                     .body("Timeline data is null");
         } catch (Exception e) {
@@ -52,9 +55,4 @@ public class MplusController {
         }
     }
 
-    private boolean isMplusTimelineParamsOk(String className, String specName, int dungeonId){
-
-
-        return false;
-    }
 }

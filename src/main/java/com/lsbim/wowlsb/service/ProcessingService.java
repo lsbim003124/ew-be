@@ -2,23 +2,22 @@ package com.lsbim.wowlsb.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.lsbim.wowlsb.cache.TimelineCache;
 import com.lsbim.wowlsb.dto.mplus.MplusEnemyCastsDTO;
 import com.lsbim.wowlsb.dto.mplus.MplusFightsDTO;
 import com.lsbim.wowlsb.dto.mplus.MplusPlayerCastsDTO;
 import com.lsbim.wowlsb.dto.mplus.MplusRankingsDTO;
 import com.lsbim.wowlsb.service.events.BuffsService;
 import com.lsbim.wowlsb.service.events.CastsService;
-import com.lsbim.wowlsb.service.repository.MplusTimelineDataService;
 import com.lsbim.wowlsb.service.repository.SpellService;
-import com.lsbim.wowlsb.service.queue.QueueService;
+import com.lsbim.wowlsb.service.wcl.DungeonService;
+import com.lsbim.wowlsb.service.wcl.FightsService;
+import com.lsbim.wowlsb.service.wcl.PlayerService;
+import com.lsbim.wowlsb.service.wcl.RankingsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,6 +44,7 @@ public class ProcessingService {
         Set<Integer> takenSkillIds = new HashSet<>();
 
         MplusRankingsDTO rankingsDTO = rankingsService.getMplusRankings(dungeonId, className, spec);
+        log.info("rankingsDTO: {}", rankingsDTO);
         List<MplusRankingsDTO.Ranking> rankings = rankingsDTO.getRankings();
 
 //        1~10등 모든 풀링, 모든 생존기재 캐스트까지 요청, **보스는 1등만!!!**
@@ -159,5 +159,4 @@ public class ProcessingService {
 
         return objectNode;
     }
-
 }

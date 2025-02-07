@@ -5,26 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lsbim.wowlsb.dto.mplus.MplusRankingsDTO;
-import com.lsbim.wowlsb.service.DungeonService;
-import com.lsbim.wowlsb.service.PlayerService;
-import com.lsbim.wowlsb.service.RankingsService;
-import com.lsbim.wowlsb.util.AppConfig;
+import com.lsbim.wowlsb.service.wcl.DungeonService;
+import com.lsbim.wowlsb.service.wcl.PlayerService;
+import com.lsbim.wowlsb.service.wcl.RankingsService;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.*;
-import org.springframework.http.client.ClientHttpRequestExecution;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
-import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @SpringBootTest

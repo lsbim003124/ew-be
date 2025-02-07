@@ -2,7 +2,7 @@ package com.lsbim.wowlsb.repo;
 
 import com.lsbim.wowlsb.entity.Spell;
 import com.lsbim.wowlsb.repository.SpellRepository;
-import com.lsbim.wowlsb.service.BlizzardService;
+import com.lsbim.wowlsb.service.blizzard.BlizzardService;
 import com.lsbim.wowlsb.service.repository.SpellService;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;

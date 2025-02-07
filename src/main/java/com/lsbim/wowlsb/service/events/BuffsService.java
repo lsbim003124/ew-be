@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lsbim.wowlsb.dto.mplus.MplusPlayerCastsDTO;
-import com.lsbim.wowlsb.enums.character.WowClass;
 import com.lsbim.wowlsb.enums.character.skill.defensive.SkillInfo;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +15,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
-import static com.lsbim.wowlsb.service.PlayerService.SKILL_ENUMS;
+import static com.lsbim.wowlsb.service.wcl.PlayerService.SKILL_ENUMS;
 
 @Service
 @Log4j2

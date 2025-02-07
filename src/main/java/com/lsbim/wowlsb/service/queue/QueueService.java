@@ -1,5 +1,6 @@
 package com.lsbim.wowlsb.service.queue;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lsbim.wowlsb.service.ProcessingService;
 import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
@@ -35,7 +36,7 @@ public class QueueService {
         private String className;
         private String specName;
         private int dungeonId;
-        private CompletableFuture<String> future; // 비동기로 응답하기 위한 Future
+        private CompletableFuture<ObjectNode> future; // 비동기로 응답하기 위한 Future
     }
 
     private String createTaskKey(String className, String specName, int dungeonId) {
@@ -43,7 +44,7 @@ public class QueueService {
     }
 
     // 새로운 작업을 큐에 추가 (생산자)**
-    public String enqueueTask(String className, String specName, int dungeonId) {
+    public ObjectNode enqueueTask(String className, String specName, int dungeonId) {
         String newKey = createTaskKey(className, specName, dungeonId);
 //        중복체크
         if (taskSet.contains(newKey)) {
@@ -51,13 +52,14 @@ public class QueueService {
             return null;
         }
 
-        CompletableFuture<String> future = new CompletableFuture<>();
+        CompletableFuture<ObjectNode> future = new CompletableFuture<>();
         TaskRequest task = new TaskRequest(className, specName, dungeonId, future);
 
         if (!taskQueue.offer(task)) { // 큐에 비동기 작업 추가, taskQueue.offer(task)가 참이면 queue에 task가 들어감
             log.warn("Queue is full, reject this: {}", newKey);
             return null;
         }
+
         taskSet.add(newKey);
         startWorker();
 
@@ -102,11 +104,11 @@ public class QueueService {
                     Thread.sleep(1000); // 1초 지연 (필요에 따라 조정)
 
 //                    WCL API로부터 데이터 가져오기
-                    String result = processingService.doProcessing(
+                    ObjectNode result = processingService.doProcessing(
                             task.getClassName(),
                             task.getSpecName(),
                             task.getDungeonId()
-                    ).toString();
+                    );
 
                     task.getFuture().complete(result); // 해당 코드 호출하는 순간 enqueueTask 리턴
 
