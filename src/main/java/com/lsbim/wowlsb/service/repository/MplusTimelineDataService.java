@@ -51,6 +51,7 @@ public class MplusTimelineDataService {
 
     public ApiResponseDTO getTimelineData(String className, String specName, int dungeonId) {
         String cacheKey = className + "-" + specName + "-" + dungeonId;
+
         ObjectNode timelineData = timelineCache.getData(cacheKey);
 
         // 캐시에 데이터가 있으면 반환
@@ -58,10 +59,10 @@ public class MplusTimelineDataService {
 //            캐시데이터 날짜체크
             LocalDateTime dataTime = timelineCache.getDataTime(cacheKey);
 
-            if(dataTime != null){
+            if (dataTime != null) {
 //                2주이상 지난 데이터인지?
                 if (mplusValidationService.isDataExpired(dataTime)) {
-                    log.info("Old Data CreatedDate: {}",dataTime);
+                    log.info("Old Data CreatedDate: {}", dataTime);
                 } else {
                     return new ApiResponseDTO(ApiStatus.COMPLETE, timelineData);
                 }
@@ -77,21 +78,25 @@ public class MplusTimelineDataService {
             return new ApiResponseDTO(ApiStatus.UPDATING, null);
         }
 
-        // 데이터가 오래된 경우, DTO의 데이터를 반환하고 비동기 데이터 갱신
-        timelineData = dto.getTimelineData();
-        if(!mplusValidationService.isDataExpired(dto.getCreatedDate())){
+        // DB 데이터가 유효한 경우
+        if (!mplusValidationService.isDataExpired(dto.getCreatedDate())) {
+            timelineCache.putData(cacheKey, dto);
             return new ApiResponseDTO(ApiStatus.COMPLETE, timelineData);
         }
 
-//        갱신해야하는 오래된 데이터의 중복 검증, 중복 시 새로 저장하여 createDate갱신, 중복이 아니면 새 데이터 생성
-        if(mplusValidationService.isDuplicateTimelineData(dto,className,specName,dungeonId)){
+//        데이터가 만료된 경우
+        timelineData = dto.getTimelineData();
+
+        if (mplusValidationService.isDuplicateTimelineData(dto, className, specName, dungeonId)) {
             log.info("Timeline Data is Duplicate");
+//            중복 데이터는 다시 저장하여 날짜 갱신
             addTimelineData(className, specName, dungeonId, timelineData);
             dto.setCreatedDate(LocalDateTime.now());
             timelineCache.putData(cacheKey, dto);
         } else {
             log.info("Timeline Data is not Duplicate");
-            scheduleDataUpdate(className, specName, dungeonId, cacheKey); // 중복이 아니면 새 데이터 저장 후 불러오기
+            // 중복이 아니면 새 데이터 저장 후 불러오기
+            scheduleDataUpdate(className, specName, dungeonId, cacheKey);
         }
 
         return new ApiResponseDTO(ApiStatus.COMPLETE, timelineData);

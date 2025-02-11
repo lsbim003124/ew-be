@@ -50,6 +50,8 @@ public class MplusController {
             if (rateLimit.tryConsume(ip)) {
                 ApiResponseDTO data = mplusTimelineDataService.getTimelineData(className, specName, dungeonId);
 
+                log.info("Response Data - className: {}, specName: {}, dungeonId: {}"
+                        , className, specName, dungeonId);
                 return ResponseEntity.ok(data);
             } else {
                 log.info("Rate limit exceeded request - className: {}, specName: {}, dungeonId: {}"
