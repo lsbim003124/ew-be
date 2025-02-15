@@ -19,15 +19,15 @@ public class MplusValidationService {
 
     public boolean validateTimelineParams(String className, String specName, int dungeonId) {
         if (!WowEnumValidator.isValidClassName(className)) {
-            log.warn("Invalid class name: {}", className);
+            log.warn("Invalid class name: {} AND specName: {} dungeonId: {}", className, specName, dungeonId);
             return false;
         }
         if (!WowEnumValidator.isValidSpecName(specName)) {
-            log.warn("Invalid spec name: {}", specName);
+            log.warn("Invalid spec name: {} AND className: {} dungeonId: {}", specName, className, dungeonId);
             return false;
         }
         if (!WowEnumValidator.isValidDungeonId(dungeonId)) {
-            log.warn("Invalid dungeon id: {}", dungeonId);
+            log.warn("Invalid dungeon id: {} AND className: {} specName: {}", dungeonId, className, specName);
             return false;
         }
 

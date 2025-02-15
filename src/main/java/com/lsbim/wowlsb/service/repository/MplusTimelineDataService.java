@@ -42,6 +42,7 @@ public class MplusTimelineDataService {
         log.info("insert timeline data... class: " + className + ", spec: " + specName + ", dungeonId: " + dungeonId);
     }
 
+//    테이블에서 시간, 데이터 컬럼만 가져옴
     @Transactional
     private MplusTimelineDataDTO findTimelineData(String className, String specName, int dungeonId) {
         MplusTimelineDataDTO findData = mplusTimelineDataRepository.findTimelineDataByClassNameAndSpecNameAndDungeonId(className, specName, dungeonId);
@@ -78,10 +79,10 @@ public class MplusTimelineDataService {
             return new ApiResponseDTO(ApiStatus.UPDATING, null);
         }
 
-        // DB 데이터가 유효한 경우
+        // DB 데이터가 유효한 경우, DTO 캐싱 + 데이터만 반환
         if (!mplusValidationService.isDataExpired(dto.getCreatedDate())) {
             timelineCache.putData(cacheKey, dto);
-            return new ApiResponseDTO(ApiStatus.COMPLETE, timelineData);
+            return new ApiResponseDTO(ApiStatus.COMPLETE, dto.getTimelineData());
         }
 
 //        데이터가 만료된 경우

@@ -9,6 +9,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class WowEnumValidator {
+
+    private static final Set<String> VALID_CLASS_NAMES = Arrays.stream(WowClass.values())
+            .map(WowClass::getDisplayName)
+            .collect(Collectors.toSet());
     private static final Set<String> VALID_SPEC_NAMES = Arrays.stream(Spec.values())
             .map(Spec::getSpecName) // spec -> spec.getSpecName과 같다
             .collect(Collectors.toSet());
@@ -17,14 +21,8 @@ public class WowEnumValidator {
             .map(Dungeons::getId)
             .collect(Collectors.toSet());
 
-    public static boolean isValidClassName(String className) {
-        try {
-            WowClass.valueOf(className.toUpperCase());
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-    }
+
+    public static boolean isValidClassName(String className) {return VALID_CLASS_NAMES.contains(className);}
 
     public static boolean isValidSpecName(String specName) {
         return VALID_SPEC_NAMES.contains(specName);

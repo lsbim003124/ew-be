@@ -5,6 +5,7 @@ import com.lsbim.wowlsb.dto.ApiResponseDTO;
 import com.lsbim.wowlsb.service.ProcessingService;
 import com.lsbim.wowlsb.service.repository.MplusTimelineDataService;
 import com.lsbim.wowlsb.service.validation.MplusValidationService;
+import com.lsbim.wowlsb.util.validation.IpValidator;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class MplusController {
     private final MplusTimelineDataService mplusTimelineDataService;
     private final MplusValidationService mplusValidationService;
     private final RateLimit rateLimit;
+    private final IpValidator ipValidator;
 
     @GetMapping("timeline")
     public ResponseEntity<?> get(HttpServletRequest request,
@@ -39,19 +41,15 @@ public class MplusController {
                     .body("Invalid params");
         }
 
-        String ip = getClientIp(request);
-
-        if (ip == null || ip.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Ip not found");
-        }
-
         try {
+            String ip = ipValidator.validateIp(request);
+
+
             if (rateLimit.tryConsume(ip)) {
                 ApiResponseDTO data = mplusTimelineDataService.getTimelineData(className, specName, dungeonId);
 
-                log.info("Response Data - className: {}, specName: {}, dungeonId: {}"
-                        , className, specName, dungeonId);
+                log.info("Response Data - className: {}, specName: {}, dungeonId: {}, ip: {}"
+                        , className, specName, dungeonId, ip);
                 return ResponseEntity.ok(data);
             } else {
                 log.info("Rate limit exceeded request - className: {}, specName: {}, dungeonId: {}"
@@ -66,54 +64,15 @@ public class MplusController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Timeline data is null");
 
+        }catch (IllegalArgumentException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid IP");
+
         } catch (Exception e) {
             log.warn("get timeline data error: class={}, spec={}, dungeon={}",
                     className, specName, dungeonId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to fetch timeline data");
         }
-    }
-
-
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_CLIENT_IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-RealIP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("REMOTE_ADDR");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-
-        if (ip.equals("0:0:0:0:0:0:0:1") || ip.equals("127.0.0.1")) {
-            InetAddress address = null;
-            try {
-                address = InetAddress.getLocalHost();
-            } catch (UnknownHostException e) {
-                log.warn("Unknown Host?: {}", e);
-                throw new RuntimeException(e);
-            }
-            ip = address.getHostName() + "/" + address.getHostAddress();
-        }
-
-        return ip;
     }
 }
