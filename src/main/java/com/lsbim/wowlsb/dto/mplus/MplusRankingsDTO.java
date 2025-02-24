@@ -25,7 +25,6 @@ public class MplusRankingsDTO {
     private List<Spell> playerSkillInfo = new ArrayList<>();
     private Set<Integer> bossSkillInfo = new HashSet<>();
     private List<Spell> takenBuffInfo = new ArrayList<>();
-    private String dataTime;
 
     @Data
     @NoArgsConstructor
@@ -61,7 +60,7 @@ public class MplusRankingsDTO {
         }
     }
 
-    //    객체 생성을 위한 팩토리 메서드 패턴
+    // 내 의도대로 객체를 깎아서 생성하기 위한 팩토리 메서드 패턴
     public static MplusRankingsDTO fromArrayNode(ArrayNode node) {
         MplusRankingsDTO dto = new MplusRankingsDTO();
         // 최대 10개

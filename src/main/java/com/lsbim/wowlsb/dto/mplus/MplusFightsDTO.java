@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.lsbim.wowlsb.enums.dungeons.DungeonBosses;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Data
@@ -25,9 +27,10 @@ public class MplusFightsDTO {
     @AllArgsConstructor
     public static class Pull {
 
-        private String name;
+//        private String name;
+        private String krBossName;
         private int bossGameId;
-        private Boolean kill;
+//        private Boolean kill;
         private long startTime;
         private long endTime;
         private long combatTime;
@@ -59,14 +62,21 @@ public class MplusFightsDTO {
         MplusFightsDTO dto = new MplusFightsDTO();
         dto.setPullsStartTime(startTime);
 
-        for (JsonNode mini : node) {
+        for (int i = 0; i < node.size(); i++) {
             MplusFightsDTO.Pull pull = new MplusFightsDTO.Pull();
+            JsonNode mini = node.get(i);
 
-            pull.setName(mini.path("name").asText());
-            pull.setKill(mini.path("kill").asBoolean());
+//            pull.setName(mini.path("name").asText());
+//            pull.setKill(mini.path("kill").asBoolean());
             pull.setStartTime(mini.path("startTime").asLong());
             pull.setEndTime(mini.path("endTime").asLong());
             pull.setCombatTime(pull.getEndTime() - pull.getStartTime());
+
+            if (i == 0) {
+//                리액트에서 첫번째 유저의 보스이름만 출력하기 때문에 0번 인덱스만 한글 보스명 가져오기
+                String krBossName = findKrBossNameByEnum(mini.path("name").asText());
+                pull.setKrBossName(krBossName);
+            }
 
 
             ArrayNode enemyNpcsNodes = (ArrayNode) mini.path("enemyNPCs");
@@ -85,5 +95,18 @@ public class MplusFightsDTO {
         }
 
         return dto;
+    }
+
+    //    다른 곳에서도 쓰이면 dungeonService로 옮기기
+    private static String findKrBossNameByEnum(String bossName) {
+
+
+        // 조건에 맞는 보스를 찾기
+        return Arrays.stream(DungeonBosses.values())
+                .filter(b -> b.getBossName().equals(bossName))
+                .findFirst()
+                .map(DungeonBosses::getKrBossName) // 변환한다는 의미 맵핑
+                .orElse("보스");
+
     }
 }
