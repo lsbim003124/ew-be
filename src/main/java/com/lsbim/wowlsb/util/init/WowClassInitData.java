@@ -4,6 +4,7 @@ import com.lsbim.wowlsb.entity.WowClass;
 import com.lsbim.wowlsb.entity.WowSpec;
 import com.lsbim.wowlsb.repository.WowClassRepository;
 import com.lsbim.wowlsb.repository.WowSpecRepository;
+import com.lsbim.wowlsb.service.repository.MplusTimelineDataService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -16,9 +17,12 @@ import java.util.List;
 @RequiredArgsConstructor
 @Log4j2
 public class WowClassInitData {
+//    직업, 전문화 데이터 체크 외에 다른 데이터에 대한 책임이 생길 시 WowDataManager로 개명하고 사용
+    
     private final WowClassRepository wowClassRepository;
     private final WowSpecRepository wowSpecRepository;
 
+//    DB에 직업, 전문화 데이터가 있는지? 없으면 수동 추가
     @Transactional
     public void initWowClassSpec() {
         List<WowClass> wowClasses = wowClassRepository.findAll();
@@ -189,4 +193,5 @@ public class WowClassInitData {
             log.info("has init wow class & spec data");
         }
     }
+
 }

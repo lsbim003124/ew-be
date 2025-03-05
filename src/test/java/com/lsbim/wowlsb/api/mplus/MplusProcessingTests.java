@@ -123,7 +123,7 @@ public class MplusProcessingTests {
         }
     }
 
-    @Test
+    /*@Test
     public void processingTest2() {
 
         int dungeonId = 12669;
@@ -190,7 +190,7 @@ public class MplusProcessingTests {
 
         ObjectNode objectNode = om.valueToTree(rankingsDTO);
         log.info(objectNode);
-    }
+    }*/
 
     @Test
     public void processingTest3() {

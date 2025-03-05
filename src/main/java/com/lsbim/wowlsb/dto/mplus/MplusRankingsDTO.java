@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.lsbim.wowlsb.dto.PlayerSkillInfoDTO;
 import com.lsbim.wowlsb.entity.Spell;
 import lombok.AllArgsConstructor;
 import lombok.Data;

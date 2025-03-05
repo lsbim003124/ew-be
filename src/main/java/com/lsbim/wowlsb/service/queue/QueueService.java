@@ -22,7 +22,7 @@ public class QueueService {
 
     private final ProcessingService processingService;
     //    공유자원 큐
-    private final BlockingQueue<TaskRequest> taskQueue = new LinkedBlockingQueue<>(20);
+    private final BlockingQueue<TaskRequest> taskQueue = new LinkedBlockingQueue<>(100);
     private final Set<String> taskSet = new HashSet<>();
     //    스레드 상태
     private volatile boolean isRunning = false;

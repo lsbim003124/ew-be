@@ -3,11 +3,8 @@ package com.lsbim.wowlsb.service.wcl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.lsbim.wowlsb.dto.PlayerSkillInfoDTO;
-import com.lsbim.wowlsb.enums.character.Spec;
 import com.lsbim.wowlsb.enums.character.WowClass;
 import com.lsbim.wowlsb.enums.character.skill.defensive.*;
-import com.lsbim.wowlsb.enums.utils.SkillProperty;
 import com.lsbim.wowlsb.service.repository.WowClassService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -18,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service

@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,10 +46,13 @@ public class ProcessingService {
 
         MplusRankingsDTO rankingsDTO = rankingsService.getMplusRankings(dungeonId, className, spec);
         log.info("rankingsDTO: {}", rankingsDTO);
+        if (rankingsDTO == null) {
+            return null;
+        }
         List<MplusRankingsDTO.Ranking> rankings = rankingsDTO.getRankings();
 
 //        1~10등 모든 풀링, 모든 생존기재 캐스트까지 요청, **보스는 1등만!!!**
-        for (int i = 0; i < rankings.size(); i++) {
+        for (int i = 0; i < rankings.size(); ) {
             try {
                 MplusRankingsDTO.Ranking ranking = rankings.get(i);
                 String name = ranking.getName();
@@ -70,7 +74,7 @@ public class ProcessingService {
                         pull.setEvents(new MplusFightsDTO.Pull.Events()); // Events 객체 초기화
                     }
 
-                    // 인덱스가 0일 때만 보스 캐스트 가져오기
+                    // 유저랭킹 인덱스가 0일 때만 보스 캐스트 가져오기
                     if (i == 0) {
                         List<MplusEnemyCastsDTO> allEnemyCasts = new ArrayList<>();
                         List<Integer> bossNpcIds = dungeonService.findBossIdByList(pull.getEnemyNpcs(), dungeonId);
@@ -85,6 +89,7 @@ public class ProcessingService {
                                 log.warn("Failed get enemy casts bossNpcId: {}. skip this boss.", bossNpcId);
                                 continue;
                             }
+
                             allEnemyCasts.addAll(enemyCastsDTO); // 보스 개인의 스킬 목록을 옮겨담기
                         }
                         pull.getEvents().setEnemyCastsDTO(allEnemyCasts); // 모든 보스 스킬 등록
@@ -141,9 +146,19 @@ public class ProcessingService {
                         }
                     }
                 }
+
+                i++; // 모든 작업이 완료되면 인덱스 증가
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                log.error("Too Many Requests index {}, Waiting for 1m before retrying.", i, e);
+                try {
+                    Thread.sleep(60000); // 1분 대기
+                } catch (InterruptedException ie) {
+                    log.error("Sleep interrupted: ", ie);
+                    Thread.currentThread().interrupt();
+                }
             } catch (Exception e) {
                 log.error("Error processing ranking index {}: {}", i, e.getMessage());
-                continue;
+                i++; // 에러 발생 시 인덱스 넘어가기
             }
         }
         if (usedPlayerSkillIds.size() > 0) {

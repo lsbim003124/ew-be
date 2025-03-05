@@ -36,7 +36,7 @@ public class MplusValidationService {
 
     public boolean isDataExpired(LocalDateTime createdDate) {
         // 기준 시간 createdDate이 비교대상보다 이전인지? .isBefore
-        return createdDate.isBefore(LocalDateTime.now().minusWeeks(2));
+        return createdDate.isBefore(LocalDateTime.now().minusDays(1));
     }
 
 //    기존 데이터와 새 랭킹목록의 중복 체크
@@ -44,7 +44,7 @@ public class MplusValidationService {
         MplusRankingsDTO newDTO = rankingsService.getMplusRankings(dungeonId, className, specName);
 
         if(dto.getTimelineData().path("rankings").size() != newDTO.getRankings().size()){
-            return true;
+            return false;
         }
 
         for (int i = 0; i < newDTO.getRankings().size(); i++) {
@@ -52,10 +52,11 @@ public class MplusValidationService {
             long oldDuration = dto.getTimelineData().path("rankings").get(i).path("duration").asLong();
 
             if(newDuration != oldDuration){
-                return true;
+                log.info("need update data... oldDuration: {}, newDuration: {}", oldDuration, newDuration);
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
 }

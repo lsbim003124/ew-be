@@ -28,6 +28,10 @@ public class MplusTimelineDataService {
     private final QueueService queueService;
     private final MplusValidationService mplusValidationService;
 
+    final static int DELETE_DAYS = 3;
+    final static int DELETE_KEEP_COUNT = 2;
+
+
     @Transactional
     private void addTimelineData(String className, String specName, int dungeonId, ObjectNode timelineData) {
         MplusTimelineData addData = MplusTimelineData.builder()
@@ -126,5 +130,12 @@ public class MplusTimelineDataService {
             log.error("Error during task: {}", e);
             return null;
         });
+    }
+
+    @Transactional
+    public int deleteTimelineData() {
+
+//        얼마나 지워졌는지 리턴
+        return mplusTimelineDataRepository.deleteOldTimelineData(DELETE_DAYS,DELETE_KEEP_COUNT);
     }
 }

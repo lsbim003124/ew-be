@@ -27,10 +27,10 @@ public class MplusFightsDTO {
     @AllArgsConstructor
     public static class Pull {
 
-//        private String name;
+        private String name;
         private String krBossName;
         private int bossGameId;
-//        private Boolean kill;
+        //        private Boolean kill;
         private long startTime;
         private long endTime;
         private long combatTime;
@@ -66,28 +66,30 @@ public class MplusFightsDTO {
             MplusFightsDTO.Pull pull = new MplusFightsDTO.Pull();
             JsonNode mini = node.get(i);
 
-//            pull.setName(mini.path("name").asText());
+            pull.setName(mini.path("name").asText());
 //            pull.setKill(mini.path("kill").asBoolean());
             pull.setStartTime(mini.path("startTime").asLong());
             pull.setEndTime(mini.path("endTime").asLong());
             pull.setCombatTime(pull.getEndTime() - pull.getStartTime());
 
-            if (i == 0) {
-//                리액트에서 첫번째 유저의 보스이름만 출력하기 때문에 0번 인덱스만 한글 보스명 가져오기
-                String krBossName = findKrBossNameByEnum(mini.path("name").asText());
-                pull.setKrBossName(krBossName);
-            }
+
+            String krBossName = findKrBossNameByEnum(mini.path("name").asText());
+            pull.setKrBossName(krBossName);
 
 
             ArrayNode enemyNpcsNodes = (ArrayNode) mini.path("enemyNPCs");
+
             if (enemyNpcsNodes != null && enemyNpcsNodes.size() > 0) {
+
                 List<Pull.EnemyNpc> enemyNpcs = new ArrayList<>();
+
                 for (JsonNode enemyNpcsNode : enemyNpcsNodes) {
                     MplusFightsDTO.Pull.EnemyNpc enemyNpc = new MplusFightsDTO.Pull.EnemyNpc();
                     enemyNpc.setId(enemyNpcsNode.path("id").asInt());
                     enemyNpc.setGameId(enemyNpcsNode.path("gameID").asInt());
                     enemyNpcs.add(enemyNpc);
                 }
+
                 pull.setEnemyNpcs(enemyNpcs);
             }
 
@@ -99,8 +101,7 @@ public class MplusFightsDTO {
 
     //    다른 곳에서도 쓰이면 dungeonService로 옮기기
     private static String findKrBossNameByEnum(String bossName) {
-
-
+//        Enum에 등록된 영문이름 -> 한글이름 변경
         // 조건에 맞는 보스를 찾기
         return Arrays.stream(DungeonBosses.values())
                 .filter(b -> b.getBossName().equals(bossName))

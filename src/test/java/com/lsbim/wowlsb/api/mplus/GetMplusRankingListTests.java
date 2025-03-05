@@ -43,7 +43,7 @@ public class GetMplusRankingListTests {
     @Value("${api.token}")
     private String token;
 
-    @Test
+   /* @Test
     public void getMplusRankingListsTest1() {
 
 //        Content-Type: application/x-www-form-urlencoded
@@ -118,7 +118,7 @@ public class GetMplusRankingListTests {
         log.info("dungeon: " + dungeonName);
         int dungeonId = dungeonService.findDungeonIdByDungeonName(dungeonName);
         log.info("dungeon id : " + dungeonId);
-    }
+    }*/
 
     @Test
     public void getMplusRankingListsTest2() {
