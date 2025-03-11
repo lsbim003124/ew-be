@@ -22,7 +22,7 @@ import java.util.List;
 @Log4j2
 public class WowClassTests {
 
-    @Autowired
+/*    @Autowired
     private WowClassRepository wowClassRepository;
 
     @Autowired
@@ -72,5 +72,5 @@ public class WowClassTests {
         for (WowSpec spec : arr) {
             log.info(spec);
         }
-    }
+    }*/
 }

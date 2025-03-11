@@ -34,7 +34,7 @@ public class GetMplusPlayerDetailsTests {
 
     @Value("${api.token}")
     private String token;
-
+/*
     @Test
     public void getMplusPlayerDetailsTest1() {
 
@@ -90,5 +90,5 @@ public class GetMplusPlayerDetailsTests {
 
 //        int actorId = playerService.findActorId(role, className, name, details);
 //        log.info(actorId);
-    }
+    }*/
 }

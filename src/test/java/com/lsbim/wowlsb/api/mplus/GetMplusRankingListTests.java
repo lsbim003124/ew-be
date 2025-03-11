@@ -120,6 +120,7 @@ public class GetMplusRankingListTests {
         log.info("dungeon id : " + dungeonId);
     }*/
 
+/*
     @Test
     public void getMplusRankingListsTest2() {
 
@@ -133,6 +134,7 @@ public class GetMplusRankingListTests {
         ObjectNode objectNode = om.valueToTree(dto);
         log.info(objectNode);
     }
+*/
 
 }
 

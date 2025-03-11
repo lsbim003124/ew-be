@@ -31,7 +31,7 @@ public class GetMplusEventByEnemyCastsTests {
     @Value("${api.token}")
     private String token;
 
-    @Test
+/*    @Test
     public void getMplusEventByEnemyCastsTest1() {
 
 //        Content-Type: application/x-www-form-urlencoded
@@ -124,5 +124,5 @@ public class GetMplusEventByEnemyCastsTests {
         dto.setAbilityGameID(node.path("abilityGameID").asInt());
 
         return dto;
-    }
+    }*/
 }

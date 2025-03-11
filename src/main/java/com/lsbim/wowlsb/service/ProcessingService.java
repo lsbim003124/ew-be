@@ -43,6 +43,7 @@ public class ProcessingService {
         Set<Integer> usedPlayerSkillIds = new HashSet<>();
         Set<Integer> usedBossSkillIds = new HashSet<>();
         Set<Integer> takenSkillIds = new HashSet<>();
+        String processingKey = className+" "+spec+" "+dungeonId;
 
         MplusRankingsDTO rankingsDTO = rankingsService.getMplusRankings(dungeonId, className, spec);
         log.info("rankingsDTO: {}", rankingsDTO);
@@ -160,6 +161,7 @@ public class ProcessingService {
                 log.error("Error processing ranking index {}: {}", i, e.getMessage());
                 i++; // 에러 발생 시 인덱스 넘어가기
             }
+            log.info("{}/{} Complete Rakings Data, {}", i, rankings.size(), processingKey);
         }
         if (usedPlayerSkillIds.size() > 0) {
             // 실제 사용한 스킬목록 추가

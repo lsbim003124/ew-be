@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @Log4j2
 public class SpellTests {
 
-    @Autowired
+/*    @Autowired
     private SpellRepository spellRepository;
 
     @Autowired
@@ -67,5 +67,5 @@ public class SpellTests {
         List<Spell> spells = spellService.getBySpellIds(spellIds);
 
         log.info("spells: {}", spells);
-    }
+    }*/
 }

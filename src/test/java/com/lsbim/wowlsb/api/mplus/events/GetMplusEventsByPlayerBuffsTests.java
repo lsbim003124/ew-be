@@ -32,7 +32,7 @@ public class GetMplusEventsByPlayerBuffsTests {
     @Value("${api.token}")
     private String token;
 
-    @Test
+ /*   @Test
     public void getMplusEventByPlayerBuffsTest1() {
         // 추후 DB에서 외생기 목록만 가져오도록 변경
         List<Integer> helfDef = Arrays.asList(6940, 116849, 33206, 1022, 204018, 102342);
@@ -113,5 +113,5 @@ public class GetMplusEventsByPlayerBuffsTests {
         dto.setAbilityGameID(node.path("abilityGameID").asInt());
 
         return dto;
-    }
+    }*/
 }

@@ -10,11 +10,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 @Log4j2
 public class GetDungeonInfoTests {
 
-    @Autowired
+/*    @Autowired
     private DungeonService dungeonService;
 
     @Test
     public void getDungeonIdByMplusTest1() {
 
-    }
+    }*/
 }

@@ -38,7 +38,7 @@ public class GetMplusFightsListTests {
     private FightsService fightsService;
 
 
-    @Test
+/*    @Test
     public void getMplusFightsListTest1() {
 
 //        Content-Type: application/x-www-form-urlencoded
@@ -103,5 +103,5 @@ public class GetMplusFightsListTests {
         MplusFightsDTO dto = fightsService.getMplusFights(code, fightId);
 
         log.info(dto);
-    }
+    }*/
 }

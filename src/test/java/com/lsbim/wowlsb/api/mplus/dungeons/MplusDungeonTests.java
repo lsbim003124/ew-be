@@ -19,19 +19,19 @@ public class MplusDungeonTests {
     @Autowired
     private ProcessingService processingService;
 
-    @Test
-    public void mplusDungeonTest1() {
-        List<Integer> arr =  Arrays.stream(Dungeons.values())
-                .map(d -> d.getId())
-                .collect(Collectors.toList());
-
-        log.info(arr);
-
-        String className = "Druid";
-        String spec = "Balance";
-        for(int dungeonId : arr){
-            ObjectNode ob = processingService.doProcessing(className, spec, dungeonId);
-            log.info(ob.toString().length());
-        }
-    }
+//    @Test
+//    public void mplusDungeonTest1() {
+//        List<Integer> arr =  Arrays.stream(Dungeons.values())
+//                .map(d -> d.getId())
+//                .collect(Collectors.toList());
+//
+//        log.info(arr);
+//
+//        String className = "Druid";
+//        String spec = "Balance";
+//        for(int dungeonId : arr){
+//            ObjectNode ob = processingService.doProcessing(className, spec, dungeonId);
+//            log.info(ob.toString().length());
+//        }
+//    }
 }

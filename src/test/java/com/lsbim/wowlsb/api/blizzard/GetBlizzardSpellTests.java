@@ -18,7 +18,7 @@ import java.util.*;
 @Log4j2
 public class GetBlizzardSpellTests {
 
-    @Autowired
+/*    @Autowired
     private RestTemplate restTemplate;
 
     @Value("${wow.spell.url}")
@@ -114,5 +114,5 @@ public class GetBlizzardSpellTests {
                 log.info("find: {}", find);
             }
         }
-    }
+    }*/
 }

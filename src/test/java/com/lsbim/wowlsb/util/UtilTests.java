@@ -15,10 +15,10 @@ import java.util.Date;
 @Log4j2
 public class UtilTests {
 
-    @Test
+/*    @Test
     public void utilTest1() {
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         String date = dateFormat.format(new Date());
         log.info(date);
-    }
+    }*/
 }

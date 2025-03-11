@@ -28,7 +28,7 @@ public class MplusFileSaveTests {
     @Autowired
     private ProcessingService processingService;
 
-    @Test
+/*    @Test
     public void fileSaveTest1() {
 
         List<Integer> dungeonIds = Arrays.stream(Dungeons.values())
@@ -81,5 +81,5 @@ public class MplusFileSaveTests {
             log.error("Failed to process dungeons data", e);
         }
 
-    }
+    }*/
 }

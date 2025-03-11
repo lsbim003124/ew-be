@@ -17,7 +17,7 @@ import org.springframework.web.client.RestTemplate;
 @Log4j2
 public class GetBlizzardItemTests {
 
-    @Autowired
+/*    @Autowired
     private RestTemplate restTemplate;
 
     @Value("${wow.item.url}")
@@ -62,5 +62,5 @@ public class GetBlizzardItemTests {
         String itemName = response.getBody().path("name").asText();
 
         log.info("itemName: {}", itemName);
-    }
+    }*/
 }

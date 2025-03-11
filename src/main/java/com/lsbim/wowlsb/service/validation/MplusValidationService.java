@@ -36,7 +36,7 @@ public class MplusValidationService {
 
     public boolean isDataExpired(LocalDateTime createdDate) {
         // 기준 시간 createdDate이 비교대상보다 이전인지? .isBefore
-        return createdDate.isBefore(LocalDateTime.now().minusDays(1));
+        return createdDate.isBefore(LocalDateTime.now().minusDays(3));
     }
 
 //    기존 데이터와 새 랭킹목록의 중복 체크

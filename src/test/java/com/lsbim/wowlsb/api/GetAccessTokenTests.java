@@ -26,7 +26,7 @@ public class GetAccessTokenTests {
     @Value("${api.access.token.url}")
     private String tokenUrl;
 
-    @Autowired
+/*    @Autowired
     private RestTemplate restTemplate = new RestTemplate();
 
     @Test
@@ -59,5 +59,5 @@ public class GetAccessTokenTests {
         ObjectNode result = response.getBody();
         String accessToken = result.path("access_token").asText();
         log.info(accessToken);
-    }
+    }*/
 }

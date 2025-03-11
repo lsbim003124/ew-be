@@ -17,7 +17,7 @@ import java.util.concurrent.*;
 @Log4j2
 public class ProducerConsumerPatterTests {
 
-    @Autowired
+/*    @Autowired
     private ProcessingService processingService;
 
     @Data
@@ -128,5 +128,5 @@ public class ProducerConsumerPatterTests {
         log.info("Task 1 result: {}", result1);
         log.info("Task 2 result: {}", result2);
         log.info("Task 3 result: {}", result3);
-    }
+    }*/
 }

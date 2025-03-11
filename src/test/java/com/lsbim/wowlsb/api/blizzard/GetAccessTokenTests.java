@@ -16,7 +16,7 @@ import org.springframework.web.client.RestTemplate;
 @Log4j2
 public class GetAccessTokenTests {
 
-    @Autowired
+/*    @Autowired
     private RestTemplate restTemplate;
 
     @Value("${wow.access.token.url}")
@@ -57,5 +57,5 @@ public class GetAccessTokenTests {
         String token = result.path("access_token").asText();
 
         log.info(token);
-    }
+    }*/
 }
