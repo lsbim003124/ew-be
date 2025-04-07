@@ -11,9 +11,11 @@ import org.springframework.stereotype.Component;
 public class WowInitRunner implements CommandLineRunner {
 
     private final WowClassInitData initData;
+    private final WowSpellIdInit initSpell;
 
     @Override
     public void run(String... args) {
         initData.initWowClassSpec();
+        initSpell.initWowSpellIdSet();
     }
 }

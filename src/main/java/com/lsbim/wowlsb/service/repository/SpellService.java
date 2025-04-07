@@ -1,8 +1,10 @@
 package com.lsbim.wowlsb.service.repository;
 
+import com.lsbim.wowlsb.cache.SpellIdCache;
 import com.lsbim.wowlsb.entity.Spell;
 import com.lsbim.wowlsb.repository.SpellRepository;
 import com.lsbim.wowlsb.service.blizzard.BlizzardService;
+import com.lsbim.wowlsb.service.wcl.gameData.GameDataService;
 import com.lsbim.wowlsb.util.CustomSpellConfig;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,13 +27,17 @@ public class SpellService {
 
     private final CustomSpellConfig customSpellConfig;
 
+    private final SpellIdCache spellIdCache;
+
+    private final GameDataService gameDataService;
+
     @Transactional
     public void addSpell(int spellId) {
         String spellName = blizzardService.getSpellInfoByBlizzard(spellId);
 
         if (spellName == null) {
             log.info("spellId: " + spellId + "'s spellName is null");
-            return;
+//            return;
         }
 
         Spell spell = Spell.builder()
@@ -45,26 +51,23 @@ public class SpellService {
 
     public List<Spell> getBySpellIds(Set<Integer> spellIds) {
 
-        List<Spell> spells = spellRepository.findByspellIdIn(spellIds);
+//        diffSet이 반환된 시점에서 이미 새 주문번호들은 캐싱됨. -> 반환된 buffIds는 DB에 없던 주문목록들
+        Set<Integer> diffSet = spellIdCache.addMissingIds(spellIds);
 
-        Set<Integer> diffSet = new HashSet<>(spellIds);
-
-        diffSet.removeAll(spells.stream()
-                .map(Spell::getSpellId) // Spell::getSpellId == Spell -> Spell.getSpellId() 와 같다.
-                .collect(Collectors.toSet())
-        ); // Spells에 들어있는 Spell들의 spellId들을 diffSet에서 제거, Spells에 없는것들만 남는다
-
-        if (diffSet.size() == 0) {
-            return spells;
-        }
-
-        for (int spellId : diffSet) {
-            if (customSpellConfig.CUSTOM_SPELLS.containsKey(spellId)) {
-                customSpellConfig.createCustomSpell(spellId);
-            } else {
-                log.info("Insert Spell List -> {}", diffSet);
-                addSpell(spellId);
+        if (diffSet.size() > 0) {
+            for (int spellId : diffSet) {
+                // 블리자드가 주지 않는 주문정보 수동삽입
+                if (customSpellConfig.CUSTOM_SPELLS.containsKey(spellId)) {
+                    customSpellConfig.createCustomSpell(spellId);
+                } else {
+                    log.info("Insert Spell List -> {}", diffSet);
+//                    DB에도 추가
+                    addSpell(spellId);
+                }
             }
+
+//        GCS에 이미지도 추가
+            gameDataService.findAndUploadSpellImg(spellIds);
         }
 
         return spellRepository.findByspellIdIn(spellIds);

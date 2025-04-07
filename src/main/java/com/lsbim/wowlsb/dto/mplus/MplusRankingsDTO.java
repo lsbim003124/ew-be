@@ -59,7 +59,7 @@ public class MplusRankingsDTO {
         }
     }
 
-    // 내 의도대로 객체를 깎아서 생성하기 위한 팩토리 메서드 패턴
+    // 내 의도대로 객체를 깎아서 생성하기 위함
     public static MplusRankingsDTO fromArrayNode(ArrayNode node) {
         MplusRankingsDTO dto = new MplusRankingsDTO();
         // 최대 10개

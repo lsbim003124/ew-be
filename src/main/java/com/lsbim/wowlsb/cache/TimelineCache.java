@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-@RequiredArgsConstructor
 @Log4j2
 public class TimelineCache {
 
@@ -36,9 +35,9 @@ public class TimelineCache {
         timelineData.put(key, data);
     }
 
-    public void timelineLog(){
+/*    public void timelineLog(){
         timelineData.forEach((key, value) -> {
             log.info("Key: " + key + " has " + value.toString().length() + " size value.");
         });
-    }
+    }*/
 }

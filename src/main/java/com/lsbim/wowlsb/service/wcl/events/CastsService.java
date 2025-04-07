@@ -1,4 +1,4 @@
-package com.lsbim.wowlsb.service.events;
+package com.lsbim.wowlsb.service.wcl.events;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;

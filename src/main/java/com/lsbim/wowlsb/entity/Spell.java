@@ -18,6 +18,5 @@ public class Spell {
     @Id
     private int spellId;
 
-    @Column(nullable = false)
     private String spellName;
 }

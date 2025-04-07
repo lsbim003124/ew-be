@@ -2,6 +2,7 @@ package com.lsbim.wowlsb.util;
 
 import com.lsbim.wowlsb.entity.Spell;
 import com.lsbim.wowlsb.repository.SpellRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,7 @@ public class CustomSpellConfig {
             370564,"정지장 배출"
     );
 
+    @Transactional
     public void createCustomSpell(int spellId){
         String spellName = CUSTOM_SPELLS.get(spellId);
 
