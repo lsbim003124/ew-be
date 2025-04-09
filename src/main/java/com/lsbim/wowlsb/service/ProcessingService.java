@@ -3,6 +3,7 @@ package com.lsbim.wowlsb.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lsbim.wowlsb.dto.mplus.*;
+import com.lsbim.wowlsb.dto.mplus.pamameter.CodeAndFightIdDTO;
 import com.lsbim.wowlsb.entity.Spell;
 import com.lsbim.wowlsb.service.wcl.events.BuffsService;
 import com.lsbim.wowlsb.service.wcl.events.CastsService;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,157 +41,210 @@ public class ProcessingService {
     private ObjectMapper om;
 
 
-    public ObjectNode doProcessing(String className, String spec, int dungeonId) {
+    public ObjectNode mplusTimelineProcessing(String className, String spec, int dungeonId) {
         Set<Integer> usedPlayerSkillIds = new HashSet<>();
         Set<Integer> usedBossSkillIds = new HashSet<>();
         Set<Integer> takenSkillIds = new HashSet<>();
+
         String processingKey = className + " " + spec + " " + dungeonId;
 
 //        그래프 buffs 이미지 수거용 Set
         Set<Integer> buffs = new HashSet<>();
 
+//        WCL 쐐기 전문화+던전 1~10위 랭킹 목록
         MplusRankingsDTO rankingsDTO = rankingsService.getMplusRankings(dungeonId, className, spec);
-        log.info("rankingsDTO: {}", rankingsDTO);
         if (rankingsDTO == null) {
-            return null;
+            log.warn("No Rankings Data: {}", processingKey);
+//            return null;
         }
-        List<MplusRankingsDTO.Ranking> rankings = rankingsDTO.getRankings();
 
-//        1~10등 모든 풀링, 모든 생존기재 캐스트까지 요청, **보스는 1등만!!!**
-        for (int i = 0; i < rankings.size(); ) {
-            try {
-                MplusRankingsDTO.Ranking ranking = rankings.get(i);
-                String name = ranking.getName();
-                String code = ranking.getReport().getCode();
-                int fightId = ranking.getReport().getFightID();
+        // 해당 직업의 생존기 목록불러오기
+        List<Integer> defList = playerService.findDefensive(className, spec);
 
-                MplusFightsDTO fightsDTO = fightsService.getMplusFights(code, fightId);
-                if (fightsDTO == null) {
-                    log.warn("Failed get fights data code: {}, fightId: {} skip this index", code, fightId);
-                    continue;
-                }
+        // 1~10등 유저의 닉네임 배열
+        List<String> names = rankingsDTO.getRankings().stream()
+                .map(MplusRankingsDTO.Ranking::getName)
+                .collect(Collectors.toList());
+        int rankingSize = rankingsDTO.getRankings().size();
 
-                ranking.setMplusFightsDTO(fightsDTO);
+        try {
+            for (int rankingsIndex = 0; rankingsIndex < rankingSize; ) {
+                try {
+                    MplusRankingsDTO.Ranking ranking = rankingsDTO.getRankings().get(rankingsIndex);
 
-                int actorId = playerService.getMplusActorId(code, fightId, className, spec, name);
+                    // [code, fightId]
+                    CodeAndFightIdDTO fightParamDTO = CodeAndFightIdDTO.fromRankings(ranking);
 
-                // 보스 마리 당 pull 단위로 쪼개진 상태
-                for (MplusFightsDTO.Pull pull : fightsDTO.getPulls()) {
-                    if (pull.getEvents() == null) {
-                        pull.setEvents(new MplusFightsDTO.Pull.Events()); // Events 객체 초기화
+//                  fight데이터
+                    MplusFightsDTO fightsDTO = fightsService.getMplusFights(fightParamDTO);
+                    if (fightsDTO == null) {
+                        log.warn("No fights Data: {}", processingKey);
+                        return null;
                     }
 
-/*                    // 유저랭킹 인덱스가 0일 때만 보스 캐스트 가져오기
-                    if (i == 0) {*/
-                    List<MplusEnemyCastsDTO> allEnemyCasts = new ArrayList<>();
-                    List<Integer> bossNpcIds = dungeonService.findBossIdByList(pull.getEnemyNpcs(), dungeonId);
-                    for (int bossNpcId : bossNpcIds) { // 보스가 여럿일때를 가장
-                        List<MplusEnemyCastsDTO> enemyCastsDTO = castsService.getEnemyCasts(
-                                code, fightId,
-                                pull.getStartTime(),
-                                pull.getEndTime(),
-                                bossNpcId, actorId
-                        );
-                        if (enemyCastsDTO.isEmpty() || enemyCastsDTO.size() == 0) {
-                            log.warn("Failed get enemy casts bossNpcId: {}. skip this boss.", bossNpcId);
-                            continue;
-                        }
+//                  유저 actorId
+                    int actorId = playerService.getMplusActorId(fightParamDTO, className, spec, names.get(rankingsIndex));
 
-                        allEnemyCasts.addAll(enemyCastsDTO); // 보스 개인의 스킬 목록을 옮겨담기
+//                  유저의 pull+boss별 보스 캐스트 데이터
+                    List<List<MplusEnemyCastsDTO>> enemyCasts = castsService.getEnemyCasts(
+                            fightParamDTO
+                            , fightsDTO
+                            , dungeonId
+                            , actorId
+                    );
+                    if (enemyCasts == null) {
+                        log.warn("No enemyCasts Data: {}", processingKey);
+                        return null;
                     }
-                    pull.getEvents().setEnemyCastsDTO(allEnemyCasts); // 모든 보스 스킬 등록
 
                     // 실제로 사용한 주문만 Set에 넣기
-                    if (allEnemyCasts.size() > 0) { // 배열이 유효하면
-                        usedBossSkillIds.addAll(allEnemyCasts.stream()
-                                .map(cast -> cast.getAbilityGameID())
-                                .collect(Collectors.toSet()));
+                    enemyCasts.stream()        // List<List<MplusEnemyCastsDTO>>
+                            .flatMap(List::stream)                         // 스트림 평탄화: Stream<MplusEnemyCastsDTO>
+                            .filter(Objects::nonNull)
+                            .mapToInt(MplusEnemyCastsDTO::getAbilityGameID)     // 각 cast 객체에서 abilityGameID 추출
+                            .forEach(usedBossSkillIds::add);
+
+//                  유저의 pull별 체력 그래프 데이터
+                    List<MplusResourcesGraphDTO> resourcesGraphDTO = resourcesService.getResourcesData(
+                            fightParamDTO
+                            , fightsDTO
+                            , actorId
+                    );
+                    if (resourcesGraphDTO == null) {
+                        log.warn("No resourcesGraph Data: {}", processingKey);
+                        return null;
                     }
 
-                    if (usedBossSkillIds.size() > 0) {
-                        //        스킬목록 추가
-                        rankingsDTO.setBossSkillInfo(usedBossSkillIds);
-                    }
-//                    } // 1위 보스캐스트 종료
-
-//                    유저별 체력의 변화 그래프, 받은 피해 기록 가져오기
-                    MplusResourcesGraphDTO resourcesGraphDTO = resourcesService.getResourcesData(
-                            code, fightId, pull.getStartTime(), pull.getEndTime(), actorId);
-                    pull.getEvents().setMplusResourcesGraphDTO(resourcesGraphDTO); // fights.pull.events에 이벤트 삽입
-
-                    Set<Integer> buffIds = resourcesService.getResourcesBuffIds(resourcesGraphDTO.getDamageTakenDataList());
-                    buffs.addAll(buffIds);
+//                  받은 피해 기록의 buffs 아이콘 수집을 위한 spellId를 Set에
+                    resourcesGraphDTO.stream()
+                            .filter(Objects::nonNull)
+                            .forEach(graph -> {
+                                Set<Integer> buffIds = resourcesService.getResourcesBuffIds(graph.getDamageTakenDataList());
+                                buffs.addAll(buffIds);
+                            });
 
                     // 받은 외생기 가져오기
-                    List<List<MplusPlayerCastsDTO>> takenBuffs = buffsService.getTakenBuffs(
-                            code, fightId
-                            , pull.getStartTime()
-                            , pull.getEndTime()
-                            , actorId);
-                    pull.getEvents().setPlayerTakenDefensiveDTO(takenBuffs); // fights.pull.events에 이벤트 삽입
-
-//                해당 직업의 생존기 목록불러오기
-                    List<Integer> defList = playerService.findDefensive(className, spec);
-
-//                생존기 주문번호에 해당하는 cast 기록 가져오기
-                    List<List<MplusPlayerCastsDTO>> defensiveCasts = castsService.getPlayerDefensiveCasts(
-                            code, fightId
-                            , pull.getStartTime()
-                            , pull.getEndTime()
+                    // [pull별][외생기 주문별]
+                    List<List<List<MplusPlayerCastsDTO>>> takenBuffs = buffsService.getTakenBuffs(
+                            fightParamDTO
+                            , fightsDTO
                             , actorId
-                            , defList, className);
-
-                    pull.getEvents().setPlayerDefensiveCastsDTO(defensiveCasts); // fights.pull.events에 이벤트 삽입
-
-                    // 실제로 사용한 주문만 Set에 넣기
-                    for (List<MplusPlayerCastsDTO> defensiveCast : defensiveCasts) {
-                        if (defensiveCast.size() > 0) { // 배열이 유효하면
-                            usedPlayerSkillIds.addAll(defensiveCast.stream()
-                                    .map(cast -> cast.getAbilityGameID())
-                                    .collect(Collectors.toSet()));
-                        }
+                    );
+                    if (takenBuffs == null) {
+                        log.warn("No takenBuffs Data: {}", processingKey);
+                        return null;
                     }
 
-                    // 받은 외생기 주문 Set에 넣기
-                    for (List<MplusPlayerCastsDTO> buff : takenBuffs) {
-                        if (buff.size() > 0) { // 배열이 유효하면
-                            takenSkillIds.addAll(buff.stream()
-                                    .map(cast -> cast.getAbilityGameID())
-                                    .collect(Collectors.toSet()));
-                        }
+//                    사용한 자생기 가져오기
+                    List<List<List<MplusPlayerCastsDTO>>> defensiveCasts = castsService.getPlayerDefensiveCasts(
+                            fightParamDTO
+                            , fightsDTO
+                            , actorId
+                            , defList);
+                    if (defensiveCasts == null) {
+                        log.warn("No defensiveCasts Data: {}", processingKey);
+                        return null;
                     }
+
+//                    유저 하나의 fightsDTO에 Pull마다 데이터 넣기
+                    MplusFightsDTO processFightsDTO = processFightsData(fightsDTO
+                            , enemyCasts
+                            , resourcesGraphDTO
+                            , takenBuffs
+                            , defensiveCasts);
+//                    ranking에 fightsDTO 삽입
+                    ranking.setMplusFightsDTO(processFightsDTO);
+
+//                    받은 외생기 Set에 넣기
+                    takenBuffs.stream()
+                            .flatMap(List::stream)
+                            .flatMap(List::stream)
+                            .filter(Objects::nonNull)
+                            .mapToInt(MplusPlayerCastsDTO::getAbilityGameID)
+                            .forEach(takenSkillIds::add);
+//                    사용한 자생기 Set에 넣기
+                    defensiveCasts.stream()
+                            .flatMap(List::stream)
+                            .flatMap(List::stream)
+                            .filter(Objects::nonNull)
+                            .mapToInt(MplusPlayerCastsDTO::getAbilityGameID)
+                            .forEach(usedPlayerSkillIds::add);
+
+//                  작업 후 인덱스 증가
+                    rankingsIndex++;
+                } catch (HttpClientErrorException.TooManyRequests e) {
+                    log.error("Too Many Requests index {}, Waiting for 1m before retrying.", rankingsIndex, e);
+                    try {
+                        Thread.sleep(60000); // 1분 대기
+                    } catch (InterruptedException ie) {
+                        log.error("Sleep interrupted: ", ie);
+                        Thread.currentThread().interrupt();
+                    }
+                } catch (Exception e) {
+                    log.warn("failed process timeline data... {}", processingKey, e);
+                    rankingsIndex++;
                 }
 
-                i++; // 모든 작업이 완료되면 인덱스 증가
-            } catch (HttpClientErrorException.TooManyRequests e) {
-                log.error("Too Many Requests index {}, Waiting for 1m before retrying.", i, e);
-                try {
-                    Thread.sleep(60000); // 1분 대기
-                } catch (InterruptedException ie) {
-                    log.error("Sleep interrupted: ", ie);
-                    Thread.currentThread().interrupt();
-                }
-            } catch (Exception e) {
-                log.error("Error processing ranking index {}: {}", i, e.getMessage());
-                i++; // 에러 발생 시 인덱스 넘어가기
+                log.info("{}/{} Complete Rakings Data, {}", rankingsIndex, rankingSize, processingKey);
+            } // 랭킹 수만큼 유저데이터 가공 종료
+
+
+            if (usedPlayerSkillIds.size() > 0) {
+                // 실제 사용한 스킬목록 추가
+                rankingsDTO.setPlayerSkillInfo(spellService.getBySpellIds(usedPlayerSkillIds));
             }
-            log.info("{}/{} Complete Rakings Data, {}", i, rankings.size(), processingKey);
-        } // 1~10등 데이터 가공 종료
-        
-        if (usedPlayerSkillIds.size() > 0) {
-            // 실제 사용한 스킬목록 추가
-            rankingsDTO.setPlayerSkillInfo(spellService.getBySpellIds(usedPlayerSkillIds));
+            if (takenSkillIds.size() > 0) {
+                // 실제 적용된 외생기목록 추가
+                rankingsDTO.setTakenBuffInfo(spellService.getBySpellIds(takenSkillIds));
+            }
+            if (usedBossSkillIds.size() > 0) {
+                // 보스 사용 스킬목록 추가
+                rankingsDTO.setBossSkillInfo(usedBossSkillIds);
+            }
+
+//            GCS 이미지 삽입은 따로
+            CompletableFuture<List<Spell>> spellFuture = CompletableFuture.supplyAsync(() -> {
+                List<Spell> newSpells = spellService.getBySpellIds(buffs);
+                log.info("Get New '{}'size Spells ", newSpells.size());
+
+                return newSpells;
+            });
+
+//            기다리지 않고 즉시 리턴
+            ObjectNode objectNode = om.valueToTree(rankingsDTO);
+
+            return objectNode;
+
+        } catch (Exception e) {
+            log.error("Error processing MplusTimelineData: '{}'", processingKey, e);
+            return null;
         }
-        if (takenSkillIds.size() > 0) {
-            // 실제 적용된 외생기목록 추가
-            rankingsDTO.setTakenBuffInfo(spellService.getBySpellIds(takenSkillIds));
-        }
+    }
 
-        List<Spell> newSpells =  spellService.getBySpellIds(buffs);
-        log.info("Get New {} Spells ",newSpells.size());
+    private MplusFightsDTO processFightsData(MplusFightsDTO fightsDTO
+            , List<List<MplusEnemyCastsDTO>> enemyCasts
+            , List<MplusResourcesGraphDTO> resourcesGraphDTO
+            , List<List<List<MplusPlayerCastsDTO>>> takenBuffs
+            , List<List<List<MplusPlayerCastsDTO>>> defensiveCasts) {
 
-        ObjectNode objectNode = om.valueToTree(rankingsDTO);
+//        pull 크기만큼 반복문
+        for (int k = 0; k < fightsDTO.getPulls().size(); k++) {
+            MplusFightsDTO.Pull pull = fightsDTO.getPulls().get(k);
+            if (pull.getEvents() == null) {
+                pull.setEvents(new MplusFightsDTO.Pull.Events()); // Events 객체 초기화
+            }
 
-        return objectNode;
+//                보스 캐스트 데이터
+            pull.getEvents().setEnemyCastsDTO(enemyCasts.get(k));
+//                체력 그래프 데이터
+            pull.getEvents().setMplusResourcesGraphDTO(resourcesGraphDTO.get(k));
+//                받은 외생기 데이터
+            pull.getEvents().setPlayerTakenDefensiveDTO(takenBuffs.get(k));
+//                사용한 자생기 데이터
+            pull.getEvents().setPlayerDefensiveCastsDTO(defensiveCasts.get(k));
+
+        } // pull 가공 종료
+
+        return fightsDTO;
     }
 }

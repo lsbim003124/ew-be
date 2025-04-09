@@ -3,7 +3,9 @@ package com.lsbim.wowlsb.service.wcl.events;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.lsbim.wowlsb.dto.mplus.MplusFightsDTO;
 import com.lsbim.wowlsb.dto.mplus.MplusResourcesGraphDTO;
+import com.lsbim.wowlsb.dto.mplus.pamameter.CodeAndFightIdDTO;
 import com.lsbim.wowlsb.service.wcl.PlayerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -28,33 +30,43 @@ public class ResourcesService {
     @Value("${api.token}")
     private String token;
 
-    public MplusResourcesGraphDTO getResourcesData(String code, int fightId, Long startTime, Long endTime, int sourceId){
+    public List<MplusResourcesGraphDTO> getResourcesData(
+            CodeAndFightIdDTO fightParamDTO, MplusFightsDTO fightsDTO, int actorId) {
 
-        String query = String.format("""
-                {
-                    reportData {
-                   		report(code:"%s"){
-                   			events(
-                   				dataType:DamageTaken
-                   				fightIDs:%d
-                   				startTime:%d
-                   				endTime:%d
-                   				sourceID:%d
-                   				hostilityType:Friendlies
-                   			){data}
-                   			hp:graph(
-                   				dataType:Resources
-                   				fightIDs:%d
-                   				startTime:%d
-                   				endTime:%d
-                   				sourceID:%d
-                   				abilityID:1000
-                   				hostilityType:Friendlies
-                   			)
-                   		}
-                     }
-                }
-                    """,code,fightId,startTime,endTime,sourceId,fightId,startTime,endTime,sourceId);
+        StringBuilder query = new StringBuilder("{\n  reportData {\n");
+
+//        pull별 반복문
+        for (int i = 0; i < fightsDTO.getPulls().size(); i++) {
+            MplusFightsDTO.Pull pull = fightsDTO.getPulls().get(i);
+
+//                alias는 report+인덱스
+            query.append(String.format("        report%d: report(code:\"%s\"){\n", i, fightParamDTO.getCode()));
+            query.append(String.format("        events(\n"));
+            query.append(String.format("        dataType:DamageTaken\n"));
+            query.append(String.format("        fightIDs:%d\n", fightParamDTO.getFightId()));
+            query.append(String.format("        startTime:%d\n", pull.getStartTime()));
+            query.append(String.format("        endTime:%d\n", pull.getEndTime()));
+            query.append(String.format("        sourceID:%d\n", actorId));
+            query.append(String.format("        hostilityType:Friendlies\n"));
+            query.append(String.format("        translate:true\n"));
+            query.append(String.format("        ){data}\n"));// events 종료
+            query.append(String.format("        hp:graph(\n"));
+            query.append(String.format("        dataType:Resources\n"));
+            query.append(String.format("        fightIDs:%d\n", fightParamDTO.getFightId()));
+            query.append(String.format("        startTime:%d\n", pull.getStartTime()));
+            query.append(String.format("        endTime:%d\n", pull.getEndTime()));
+            query.append(String.format("        sourceID:%d\n", actorId));
+            query.append(String.format("        abilityID:1000\n"));
+            query.append(String.format("        hostilityType:Friendlies\n"));
+            query.append(String.format("        translate:true\n"));
+            query.append(String.format("        )")); // hp 종료
+            query.append(String.format("        }\n")); // report 종료(alias)
+
+        }// pull별 종료
+
+
+        query.append("  }\n"); // reportData 종료
+        query.append("  }\n"); // 전체 종료
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -63,7 +75,7 @@ public class ResourcesService {
 
         // 요청 본문 구성
         Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("query", query);
+        requestBody.put("query", query.toString());
 
 //        HttpEntity 생성 (Headers와 Body 포함)
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
@@ -76,19 +88,31 @@ public class ResourcesService {
                 ObjectNode.class
         );
 
+
         ObjectNode result = (ObjectNode) response.getBody()
-                .path("data").path("reportData").path("report");
+                .path("data").path("reportData");
 
-        MplusResourcesGraphDTO dto = MplusResourcesGraphDTO.fromArrayNode(result);
 
-        return dto;
+//            유저별 그래프데이터
+        List<MplusResourcesGraphDTO> arr = new ArrayList<>();
+
+        // pull별 resources 기록 유저 전용으로 통합
+        for (int i = 0; i < fightsDTO.getPulls().size(); i++) {
+            ObjectNode node = (ObjectNode) result.path("report" + i);
+            MplusResourcesGraphDTO dto = MplusResourcesGraphDTO.fromArrayNode(node);
+
+            arr.add(dto);
+        }
+
+
+        return arr;
     }
 
-    public Set<Integer> getResourcesBuffIds(ArrayNode damageTakenDataList){
+    public Set<Integer> getResourcesBuffIds(ArrayNode damageTakenDataList) {
         Set<Integer> buffIds = new HashSet<>();
 
         for (JsonNode taken : damageTakenDataList) {
-            if(!taken.has("buffs")){ // buffs 필드가 없으면
+            if (!taken.has("buffs")) { // buffs 필드가 없으면
                 continue;
             }
 
@@ -109,7 +133,7 @@ public class ResourcesService {
                         buffIds.add(buffId); // 플레이어에게 적용된 버프 목록 전부 삽입
                     } catch (NumberFormatException nfe) {
                         // 숫자가 아닌 토큰이 섞여 있으면 무시하거나 로깅
-                         log.warn("Invalid buff id token: {}", part);
+                        log.warn("Invalid buff id token: {}", part);
                     }
                 }
             }

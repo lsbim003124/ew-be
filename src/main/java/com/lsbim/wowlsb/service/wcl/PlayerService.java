@@ -3,6 +3,7 @@ package com.lsbim.wowlsb.service.wcl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.lsbim.wowlsb.dto.mplus.pamameter.CodeAndFightIdDTO;
 import com.lsbim.wowlsb.enums.character.WowClass;
 import com.lsbim.wowlsb.enums.character.skill.defensive.*;
 import com.lsbim.wowlsb.service.repository.WowClassService;
@@ -54,20 +55,16 @@ public class PlayerService {
     @Value("${api.token}")
     private String token;
 
-    public int getMplusActorId(String code, int fightId, String className, String spec, String name) {
+    public Integer getMplusActorId(CodeAndFightIdDTO paramDTO, String className, String spec, String name) {
+        StringBuilder query = new StringBuilder("{\n  reportData {\n");
 
-        String query = String.format("""
-                {
-                  reportData {
-                        report(code:"%s"){
-                            playerDetails(
-                                fightIDs:%d
-                                translate:true
-                            )
-                        }
-                  }
-                }
-                    """, code, fightId);
+        // 각 파라미터 별로 alias를 붙여 GraphQL 쿼리 생성
+
+        query.append(String.format("    report(code:\"%s\"){\n", paramDTO.getCode()));
+        query.append("      playerDetails(fightIDs:" + paramDTO.getFightId() + " translate:true)\n");
+        query.append("    }\n");
+
+        query.append("  }\n}");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -76,28 +73,31 @@ public class PlayerService {
 
         // 요청 본문 구성
         Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("query", query);
+        requestBody.put("query", query.toString());
 
-//        HttpEntity 생성 (Headers와 Body 포함)
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
-        // API 요청
         ResponseEntity<ObjectNode> response = restTemplate.exchange(
                 apiUrl,
                 HttpMethod.POST,
                 requestEntity,
-                ObjectNode.class
-        );
+                ObjectNode.class);
+
 
         ObjectNode result = response.getBody();
-        JsonNode details = result.path("data").path("reportData")
-                .path("report").path("playerDetails")
-                .path("data").path("playerDetails");
 
-        String role = wowClassService.getRoleByClassNameAndSpecName(className,spec);
-        int actorId = getActorId(role, className, name, details);
+        // 고정값: role (클래스와 스펙에 따른 역할) 얻기
+        String role = wowClassService.getRoleByClassNameAndSpecName(className, spec);
 
-//        log.info("1회 호출");
+        JsonNode reportNode = result
+                .path("data").path("reportData")
+                .path("report")
+                .path("playerDetails")
+                .path("data")
+                .path("playerDetails");
+
+        int actorId = getActorId(role, className, name, reportNode);
+
         return actorId;
     }
 

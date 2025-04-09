@@ -104,7 +104,7 @@ public class QueueService {
                     Thread.sleep(1000); // 1초 지연 (필요에 따라 조정)
 
 //                    WCL API로부터 데이터 가져오기
-                    ObjectNode result = processingService.doProcessing(
+                    ObjectNode result = processingService.mplusTimelineProcessing(
                             task.getClassName(),
                             task.getSpecName(),
                             task.getDungeonId()

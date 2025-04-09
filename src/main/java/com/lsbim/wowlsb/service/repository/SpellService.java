@@ -38,6 +38,10 @@ public class SpellService {
         if (spellName == null) {
             log.info("spellId: " + spellId + "'s spellName is null");
 //            return;
+
+//            현재  spring.jpa.hibernate.ddl-auto=update + 엔티티에서 nullable=false
+//            제거해도 null을 거부하는 중. 임시로 빈 문자열 삽입
+            spellName = "";
         }
 
         Spell spell = Spell.builder()

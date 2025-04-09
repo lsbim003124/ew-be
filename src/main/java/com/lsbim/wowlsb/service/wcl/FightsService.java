@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lsbim.wowlsb.dto.mplus.MplusFightsDTO;
+import com.lsbim.wowlsb.dto.mplus.pamameter.CodeAndFightIdDTO;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,9 +13,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @Log4j2
@@ -32,28 +31,23 @@ public class FightsService {
     @Value("${api.token}")
     private String token;
 
-    public MplusFightsDTO getMplusFights(String code, int fightId) {
+    public MplusFightsDTO getMplusFights(CodeAndFightIdDTO paramDTO) {
 
-        //        %d는 정수형(int), %s는 문자열(String)
-        String query = String.format("""
-        {
-          reportData {
-                report(code:"%s"){
-                    startTime
-                    endTime
-                    fights(
-                        fightIDs:%d
-                        translate:true
-                    ){
-                        startTime
-                        dungeonPulls{name,kill,startTime,endTime,
-                            enemyNPCs{id,gameID}
-                        }
-                    }
-                }
-          }
-        }
-        """, code, fightId);
+        StringBuilder query = new StringBuilder("{\n  reportData {\n");
+
+        // 각 요청에 대한 GraphQL 쿼리 생성
+        query.append(String.format("    report(code:\"%s\"){\n", paramDTO.getCode()));
+        query.append("      startTime\n      endTime\n");
+        query.append(String.format("      " +
+                        "fights(fightIDs:%d " +
+                        "translate:true){\n"
+                , paramDTO.getFightId()));
+        query.append("        startTime\n        dungeonPulls{\n");
+        query.append("          name,kill,startTime,endTime,\n");
+        query.append("          enemyNPCs{id,gameID}\n        }\n");
+        query.append("      }\n    }\n");
+
+        query.append("  }\n}");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -62,7 +56,7 @@ public class FightsService {
 
         // 요청 본문 구성
         Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("query", query);
+        requestBody.put("query", query.toString());
 
 //        HttpEntity 생성 (Headers와 Body 포함)
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
@@ -86,13 +80,12 @@ public class FightsService {
 
         MplusFightsDTO dto = MplusFightsDTO.fromArrayNode(killPull, startTime);
 
-//        log.info("1회 호출");
         return dto;
     }
 
-//    kill이 true인 pull만 가져오기(네임드 킬)
+    //    kill이 true인 pull만 가져오기(네임드 킬)
     public ArrayNode getKillPull(JsonNode node) {
-        if(node.isNull()) return null;
+        if (node.isNull()) return null;
 
         JsonNode dungeonPulls = node.path("dungeonPulls");
 

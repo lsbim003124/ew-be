@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.lsbim.wowlsb.dto.mplus.MplusFightsDTO;
 import com.lsbim.wowlsb.dto.mplus.MplusPlayerCastsDTO;
+import com.lsbim.wowlsb.dto.mplus.pamameter.CodeAndFightIdDTO;
 import com.lsbim.wowlsb.enums.character.skill.defensive.SkillInfo;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,11 +34,44 @@ public class BuffsService {
     @Value("${api.token}")
     private String token;
 
-    public List<List<MplusPlayerCastsDTO>> getTakenBuffs(
-            String code, int fightId, long startTime, long endTime, int actorId) {
-        // 추후 DB에서 외생기 목록만 가져오도록 변경
-        List<Integer> helfDef = Arrays.asList(6940, 116849, 33206, 1022, 204018, 102342);
-        List<List<MplusPlayerCastsDTO>> dtoList = new ArrayList<>();
+
+    //  [유저의][pull별][외생기 주문별]
+    public List<List<List<MplusPlayerCastsDTO>>> getTakenBuffs(
+            CodeAndFightIdDTO fightParamDTO, MplusFightsDTO fightsDTO, int actorId) {
+//      유효 외생기 주문번호 목록
+        List<Integer> helpDef = Arrays.asList(6940, 116849, 33206, 1022, 204018, 102342);
+
+        StringBuilder query = new StringBuilder("{\n  reportData {\n");
+
+//        pull별 반복문
+        for (int i = 0; i < fightsDTO.getPulls().size(); i++) {
+            MplusFightsDTO.Pull pull = fightsDTO.getPulls().get(i);
+
+//            외생기 리스트
+            for (int j = 0; j < helpDef.size(); j++) {
+
+//                alias는 report+인덱스
+                query.append(String.format("        report%d_help%d: report(code:\"%s\"){\n", i, j, fightParamDTO.getCode()));
+                query.append(String.format("        events(\n"));
+                query.append(String.format("        dataType:Buffs\n"));
+                query.append(String.format("        fightIDs:%d\n", fightParamDTO.getFightId()));
+                query.append(String.format("        startTime:%d\n", pull.getStartTime()));
+                query.append(String.format("        endTime:%d\n", pull.getEndTime()));
+                query.append(String.format("        translate:true\n"));
+                query.append(String.format("        abilityID:%d\n", helpDef.get(j)));
+                query.append(String.format("        ){data}\n"));// events 종료
+                query.append(String.format("        }\n")); // report 종료(alias)
+            }
+
+        }// pull별 종료
+
+
+        query.append("  }\n"); // reportData 종료
+        query.append("  }\n"); // 전체 종료
+
+        // 요청 본문 구성
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("query", query.toString());
 
 //        Content-Type: application/x-www-form-urlencoded
         HttpHeaders headers = new HttpHeaders();
@@ -44,62 +79,55 @@ public class BuffsService {
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.setBearerAuth(token);
 
-        for (int skillId : helfDef) {
-
-            String query = String.format("""
-                    {
-                      reportData {
-                    		report(code:"%s"){
-                    			events(
-                    				dataType:Buffs
-                    				fightIDs:%d
-                    				startTime:%d
-                    				endTime:%d
-                    				translate:true
-                    				abilityID:%d
-                    			){
-                    				data
-                    			}
-                    		}
-                      }
-                    }
-                        """, code, fightId, startTime, endTime, skillId);
-
-            // 요청 본문 구성
-            Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("query", query);
-
 //        HttpEntity 생성 (Headers와 Body 포함)
-            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
-            // API 요청
-            ResponseEntity<ObjectNode> response = restTemplate.exchange(
-                    apiUrl,
-                    HttpMethod.POST,
-                    requestEntity,
-                    ObjectNode.class
-            );
+        // API 요청
+        ResponseEntity<ObjectNode> response = restTemplate.exchange(
+                apiUrl,
+                HttpMethod.POST,
+                requestEntity,
+                ObjectNode.class
+        );
 
-            ObjectNode result = response.getBody();
+        ObjectNode result = response.getBody();
 
-            ArrayNode events = (ArrayNode) result
-                    .path("data").path("reportData")
-                    .path("report").path("events").path("data");
+//        log.info(result);
 
-            List<MplusPlayerCastsDTO> arr = new ArrayList<>();
+//        유저 하나의 외생기데이터
+        List<List<List<MplusPlayerCastsDTO>>> userHelpList = new ArrayList<>();
 
-            for (JsonNode event : events) {
-                if (event.path("targetID").asInt() == actorId) {
-                    MplusPlayerCastsDTO dto = createPlayerDefensiveDTO(event);
-                    arr.add(dto);
+//        pull 단위
+        for (int i = 0; i < fightsDTO.getPulls().size(); i++) {
+//            pull 하나의 외생기데이터
+            List<List<MplusPlayerCastsDTO>> dtoList = new ArrayList<>();
+
+//            외생기 리스트
+            for (int j = 0; j < helpDef.size(); j++) {
+
+                ArrayNode events = (ArrayNode) result
+                        .path("data").path("reportData")
+                        .path("report" + i + "_" + "help" + j).path("events")
+                        .path("data");
+
+//                외생기 하나 단위
+                List<MplusPlayerCastsDTO> arr = new ArrayList<>();
+
+                for (JsonNode event : events) {
+                    if (event.path("targetID").asInt() == actorId) {
+                        MplusPlayerCastsDTO dto = createPlayerDefensiveDTO(event);
+                        arr.add(dto);
+                    }
                 }
-            }
-            if (!arr.isEmpty()) {
+
+//              배열이 비어있어도 pull 인덱스를 유지하기 위해 무조건 추가
                 dtoList.add(arr);
             }
+
+            userHelpList.add(dtoList);
         }
-//        log.info(helfDef.size()+"회 호출");
-        return dtoList;
+
+        return userHelpList;
     }
 
     private MplusPlayerCastsDTO createPlayerDefensiveDTO(JsonNode node) {
