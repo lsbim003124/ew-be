@@ -71,15 +71,24 @@ public class FightsService {
 
         ObjectNode result = response.getBody();
 
-        JsonNode node = result
-                .path("data").path("reportData")
-                .path("report").path("fights").get(0);
+        JsonNode node = null;
+        MplusFightsDTO dto = null;
 
-        long startTime = node.path("startTime").asLong();
-        ArrayNode killPull = getKillPull(node);
+        try {
 
-        MplusFightsDTO dto = MplusFightsDTO.fromArrayNode(killPull, startTime);
+            node = result
+                    .path("data").path("reportData")
+                    .path("report").path("fights").get(0);
 
+            long startTime = node.path("startTime").asLong();
+            ArrayNode killPull = getKillPull(node);
+
+            dto = MplusFightsDTO.fromArrayNode(killPull, startTime);
+
+            return dto;
+        } catch (NullPointerException e) {
+            log.info("NPE! Failed process fights info: '{}'", paramDTO);
+        }
         return dto;
     }
 

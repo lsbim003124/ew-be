@@ -194,6 +194,5 @@ public class PlayerService {
                 .filter(wc -> wc.getDisplayName().equalsIgnoreCase(className))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Invalid class name: " + className));
-
     }
 }

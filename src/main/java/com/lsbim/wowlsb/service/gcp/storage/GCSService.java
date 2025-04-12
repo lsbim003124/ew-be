@@ -66,6 +66,8 @@ public class GCSService {
             }
         } catch (IOException e) {
             log.error("Failed Connect to GCS", e);
+        } catch (Exception e){
+            log.error("Failed Connect to GCS", e);
         }
 
     }

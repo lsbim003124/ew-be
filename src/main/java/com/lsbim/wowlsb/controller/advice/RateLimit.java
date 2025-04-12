@@ -52,19 +52,21 @@ public class RateLimit {
 //        버킷이 null이 아니고 토큰 소비가 가능할 경우 true 반환
         boolean consume = bucket != null && bucket.tryConsume(1);
 
-        if(!consume){
+        if (!consume) {
             log.info("Rate Limit exceeded IP: {}", ip);
         }
 
         return consume;
     }
 
-//    1분마다 맵과 유저카운터 초기화
+    //    1분마다 맵과 유저카운터 초기화
     @Scheduled(fixedRate = 60000)
-    public void ipBucketCleanup(){
+    public void ipBucketCleanup() {
         int size = ipBucket.size();
         ipBucket.clear();
         userIpCounter.set(0);
-        log.info("Clean up {} IP bucket", size);
+        if (size > 1) {
+            log.info("Clean up {} IP bucket", size);
+        }
     }
 }

@@ -2,7 +2,6 @@ package com.lsbim.wowlsb.api.mplus.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.lsbim.wowlsb.dto.mplus.MplusResourcesGraphDTO;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -23,11 +24,11 @@ public class QueueService {
     private final ProcessingService processingService;
     //    공유자원 큐
     private final BlockingQueue<TaskRequest> taskQueue = new LinkedBlockingQueue<>(100);
-    private final Set<String> taskSet = new HashSet<>();
-    //    스레드 상태
-    private volatile boolean isRunning = false;
-    //        단일 스레드
-    private Thread workerThread;
+    //    동시성 안전한 Set. synchronized 없애도 됨
+    private final Set<String> taskSet = ConcurrentHashMap.newKeySet();
+
+    @Qualifier("dataUpdateExecutor") // Bean을 명시적으로 주입
+    private final Executor dataUpdateExecutor;
 
     //    큐 작업에만 쓰일 객체
     @Getter
@@ -61,7 +62,8 @@ public class QueueService {
         }
 
         taskSet.add(newKey);
-        startWorker();
+        // 전용 쓰레드 풀로 processQueue를 실행
+        dataUpdateExecutor.execute(this::processQueue);
 
         try {
             return future.get(); // complete(result)로 값이 채워지는 순간 리턴
@@ -71,77 +73,54 @@ public class QueueService {
         }
     }
 
-    // 작업자 스레드가 필요한 경우 시작
-    private synchronized void startWorker() {
-        if (!isRunning) {
-            isRunning = true;
-            workerThread = new Thread(this::processQueue);
-            workerThread.setDaemon(true);
-            workerThread.start();
-        }
-    }
-
     // 큐에서 doProcessing 파라미터를 꺼내 작업을 처리 (소비자)**
     private void processQueue() {
         log.info("===============================");
-        while (isRunning) {
+        while (true) {
+            TaskRequest task = null; // finally에서 쓰기 위해 먼저 선언
+
             try {
                 log.info("Queue is currently {}", taskQueue);
-                TaskRequest task = taskQueue.poll(1, TimeUnit.SECONDS);
+
+                task = taskQueue.poll(1, TimeUnit.SECONDS);
                 if (task == null) {
                     // 1초 동안 새 작업이 없으면 스레드 종료
-                    synchronized (this) { // 락이 걸림. 다른 스레드가 끼어들지 못 함.
-                        if (taskQueue.isEmpty()) {
-                            log.info("Queue work end.");
-                            isRunning = false;
-                            break;
-                        }
+                    if (taskQueue.isEmpty()) {
+                        log.info("Queue work end.");
+                        break;
                     }
                     continue;
                 }
+
                 log.info("Queue Poll {}", task);
-                try {
-                    Thread.sleep(1000); // 1초 지연 (필요에 따라 조정)
 
-//                    WCL API로부터 데이터 가져오기
-                    ObjectNode result = processingService.mplusTimelineProcessing(
-                            task.getClassName(),
-                            task.getSpecName(),
-                            task.getDungeonId()
-                    );
+//                    WCL API로부터 데이터 가져오기(갱신)
+                ObjectNode result = processingService.mplusTimelineProcessing(
+                        task.getClassName(),
+                        task.getSpecName(),
+                        task.getDungeonId()
+                );
 
-                    task.getFuture().complete(result); // 해당 코드 호출하는 순간 enqueueTask 리턴
+                task.getFuture().complete(result); // 해당 코드 호출하는 순간 enqueueTask 리턴
 
-                } catch (HttpClientErrorException.TooManyRequests e) {
-                    log.error("Too many request task: ", e);
-
-                    ScheduledExecutorService tempScheduler = Executors.newScheduledThreadPool(1);
-                    tempScheduler.schedule(() -> {
-                        log.info("Retrying task after 1 hour: {}", task);
-                        taskQueue.offer(task);
-                        startWorker();
-
-                        tempScheduler.shutdown();
-                    }, 1, TimeUnit.HOURS);
-
-                } catch (Exception e) {
-                    log.error("Error processing task: ", e);
-                    task.getFuture().completeExceptionally(e); // 에러를 future에 전달?
-                } finally {
-//                    작업 종료 시 해당 파라미터 Set에서 제거, 예외가 발생하지 않으면 Set에서 제거
-                    if (!task.getFuture().isCompletedExceptionally()) {
-                        String completeTaskKey = createTaskKey(
-                                task.className,
-                                task.specName,
-                                task.dungeonId
-                        );
-                        taskSet.remove(completeTaskKey);
-                    }
-                }
             } catch (InterruptedException e) {
-                log.error("Worker thread interrupted: ", e);
+                log.warn("Worker thread interrupted: ", e);
                 Thread.currentThread().interrupt();
                 break;
+            } catch (Exception e) {
+                log.warn("Error queue processing task", e);
+                if(task != null){
+                    task.getFuture().completeExceptionally(e);
+                }
+            } finally {
+                if (task != null) {
+                    String completeTaskKey = createTaskKey(
+                            task.className,
+                            task.specName,
+                            task.dungeonId
+                    );
+                    taskSet.remove(completeTaskKey);
+                }
             }
         }
     }
@@ -150,12 +129,4 @@ public class QueueService {
         return taskSet.contains(createTaskKey(className, specName, dungeonId));
     }
 
-    // 어플리케이션 서비스 종료 시 정리
-    @PreDestroy
-    public void shutdown() {
-        isRunning = false;
-        if (workerThread.isAlive()) {
-            workerThread.interrupt();
-        }
-    }
 }

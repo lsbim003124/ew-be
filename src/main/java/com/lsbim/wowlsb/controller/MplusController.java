@@ -42,6 +42,8 @@ public class MplusController {
         }
 
         try {
+            log.info("Request Data - className: {}, specName: {}, dungeonId: {}", className, specName, dungeonId);
+
             String ip = ipValidator.validateIp(request);
 
 

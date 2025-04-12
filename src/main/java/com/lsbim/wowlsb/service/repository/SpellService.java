@@ -10,6 +10,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.HashSet;
 import java.util.List;
@@ -71,7 +72,11 @@ public class SpellService {
             }
 
 //        GCS에 이미지도 추가
-            gameDataService.findAndUploadSpellImg(spellIds);
+            try {
+                gameDataService.findAndUploadSpellImg(spellIds);
+            } catch (HttpClientErrorException.TooManyRequests e){
+                log.warn("Failed process get gameData...",e);
+            }
         }
 
         return spellRepository.findByspellIdIn(spellIds);

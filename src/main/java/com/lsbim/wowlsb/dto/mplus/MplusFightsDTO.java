@@ -55,8 +55,6 @@ public class MplusFightsDTO {
             private List<List<MplusPlayerCastsDTO>> playerDefensiveCastsDTO;
             @JsonProperty("playerTakenDef")
             private List<List<MplusPlayerCastsDTO>> playerTakenDefensiveDTO;
-            @JsonProperty("resources")
-            private MplusResourcesGraphDTO mplusResourcesGraphDTO;
         }
     }
 

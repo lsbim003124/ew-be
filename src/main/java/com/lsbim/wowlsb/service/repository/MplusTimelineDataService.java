@@ -13,12 +13,14 @@ import jakarta.transaction.Transactional;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.LocalDateTime;
 import java.util.TooManyListenersException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 @Service
 @RequiredArgsConstructor
@@ -60,19 +62,22 @@ public class MplusTimelineDataService {
         String cacheKey = className + "-" + specName + "-" + dungeonId;
 
 //        해당 전문화+던전이 작업중이면 캐시/DB데이터 즉시반환
-        if(queueService.isTaskInSet(className, specName, dungeonId)){
+        if (queueService.isTaskInSet(className, specName, dungeonId)) {
             log.info("Data update queue already: {}", cacheKey);
 
             ObjectNode cachedData = timelineCache.getData(cacheKey);
+//            캐시에 데이터가 있으면?
             if (cachedData != null) {
-                return new ApiResponseDTO(ApiStatus.UPDATING, cachedData);
+                return new ApiResponseDTO(ApiStatus.COMPLETE, cachedData);
             }
 
+//            DB 조회 시 데이터가 존재하면?
             MplusTimelineDataDTO dbData = findTimelineData(className, specName, dungeonId);
             if (dbData != null) {
-                return new ApiResponseDTO(ApiStatus.UPDATING, dbData.getTimelineData());
+                return new ApiResponseDTO(ApiStatus.COMPLETE, dbData.getTimelineData());
             }
 
+//            QUEUE 대기열에 존재하는 상황에 캐시된데이터도 DB에데이터도 없으면 null+UPDATING 상태 반환
             return new ApiResponseDTO(ApiStatus.UPDATING, null);
         }
 
@@ -113,21 +118,16 @@ public class MplusTimelineDataService {
         timelineData = dto.getTimelineData();
 
 //        호출횟수 초과한 상태에서 중복데이터 확인 불가능. 일단 리턴
-        try {
-            if (mplusValidationService.isDuplicateTimelineData(dto, className, specName, dungeonId)) {
-                log.info("Timeline Data is Duplicate");
+        if (mplusValidationService.isDuplicateTimelineData(dto, className, specName, dungeonId)) {
+            log.info("Timeline Data is Duplicate");
 //            중복 데이터는 다시 저장하여 날짜 갱신
-                addTimelineData(className, specName, dungeonId, timelineData);
-                dto.setCreatedDate(LocalDateTime.now());
-                timelineCache.putData(cacheKey, dto);
-            } else {
-                log.info("Timeline Data is not Duplicate");
-                // 중복이 아니면 새 데이터 저장 후 불러오기
-                scheduleDataUpdate(className, specName, dungeonId, cacheKey);
-            }
-        } catch (HttpClientErrorException.TooManyRequests e) {
-            log.warn("Too Many Request to WCL API. Could not Duplication validation", e);
-            return new ApiResponseDTO(ApiStatus.COMPLETE, timelineData);
+            addTimelineData(className, specName, dungeonId, timelineData);
+            dto.setCreatedDate(LocalDateTime.now());
+            timelineCache.putData(cacheKey, dto);
+        } else {
+            log.info("Timeline Data is not Duplicate");
+            // 중복이 아니면 새 데이터 저장 후 불러오기
+            scheduleDataUpdate(className, specName, dungeonId, cacheKey);
         }
 
         return new ApiResponseDTO(ApiStatus.COMPLETE, timelineData);
