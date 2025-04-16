@@ -45,6 +45,7 @@ public class ProcessingService {
         Set<Integer> usedPlayerSkillIds = new HashSet<>();
         Set<Integer> usedBossSkillIds = new HashSet<>();
         Set<Integer> takenSkillIds = new HashSet<>();
+        Set<Integer> takenBloodlusts = new HashSet<>();
 
         String processingKey = className + " " + spec + " " + dungeonId;
         log.info("Start processing. key: {}", processingKey);
@@ -52,18 +53,10 @@ public class ProcessingService {
 //        그래프 buffs 이미지 수거용 Set
         Set<Integer> buffs = new HashSet<>();
 
-        MplusRankingsDTO rankingsDTO = null;
-
-        try {
-//        WCL 쐐기 전문화+던전 1~10위 랭킹 목록
-            rankingsDTO = rankingsService.getMplusRankings(dungeonId, className, spec);
-            if (rankingsDTO == null) {
-                log.warn("No Rankings Data: {}", processingKey);
-                return null;
-            }
-        } catch (Exception e) {
-//            랭킹부터 예외발생 (거의 투매니리퀘스트)
-            log.warn("Failed process get rankings data: {}", processingKey, e);
+//        WCL 쐐기 전문화+던전 1~10위 랭킹 목록, 여기서 예외 발생 시 Queue에서 처리중
+        MplusRankingsDTO rankingsDTO = rankingsService.getMplusRankings(dungeonId, className, spec);
+        if (rankingsDTO == null) {
+            log.warn("No Rankings Data: {}", processingKey);
             return null;
         }
 
@@ -79,7 +72,6 @@ public class ProcessingService {
 //        1~10등의 개인별 데이터 가져오는 반복문
         for (int rankingsIndex = 0; rankingsIndex < rankingSize; ) {
             try {
-                log.info("{}/{} Start get Rakings Data, {}", rankingsIndex, rankingSize, processingKey);
                 MplusRankingsDTO.Ranking ranking = rankingsDTO.getRankings().get(rankingsIndex);
 
                 // [code, fightId]
@@ -122,10 +114,13 @@ public class ProcessingService {
                         , fightsDTO
                         , actorId
                 );
-                if (takenBuffs == null) {
-                    log.warn("No takenBuffs Data: {}", processingKey);
-                    return null;
-                }
+
+                // 블러드
+                List<List<List<MplusPlayerCastsDTO>>> takenBlood = buffsService.getTakenBloodlusts(
+                        fightParamDTO
+                        , fightsDTO
+                        , actorId
+                );
 
 //                    사용한 자생기 가져오기
                 List<List<List<MplusPlayerCastsDTO>>> defensiveCasts = castsService.getPlayerDefensiveCasts(
@@ -142,7 +137,8 @@ public class ProcessingService {
                 MplusFightsDTO processFightsDTO = processFightsData(fightsDTO
                         , enemyCasts
                         , takenBuffs
-                        , defensiveCasts);
+                        , defensiveCasts
+                        , takenBlood);
 //                    ranking에 fightsDTO 삽입
                 ranking.setMplusFightsDTO(processFightsDTO);
 
@@ -153,6 +149,12 @@ public class ProcessingService {
                         .filter(Objects::nonNull)
                         .mapToInt(MplusPlayerCastsDTO::getAbilityGameID)
                         .forEach(takenSkillIds::add);
+                takenBlood.stream()
+                        .flatMap(List::stream)
+                        .flatMap(List::stream)
+                        .filter(Objects::nonNull)
+                        .mapToInt(MplusPlayerCastsDTO::getAbilityGameID)
+                        .forEach(takenBloodlusts::add);
 //                    사용한 자생기 Set에 넣기
                 defensiveCasts.stream()
                         .flatMap(List::stream)
@@ -166,7 +168,7 @@ public class ProcessingService {
             } catch (HttpClientErrorException.TooManyRequests e) {
                 log.warn("Too Many Requests index {}, Waiting for 1m before retrying.", rankingsIndex, e);
                 try {
-                    Thread.sleep(60000); // 1분 대기
+                    Thread.sleep(120000); // 2분 대기
                 } catch (InterruptedException ie) {
                     log.warn("Sleep interrupted: ", ie);
                     Thread.currentThread().interrupt();
@@ -188,6 +190,10 @@ public class ProcessingService {
         if (takenSkillIds.size() > 0) {
             // 실제 적용된 외생기목록 추가
             rankingsDTO.setTakenBuffInfo(spellService.getBySpellIds(takenSkillIds));
+        }
+        if (takenBloodlusts.size() > 0) {
+            // 블러드 목록 추가
+            rankingsDTO.setTakenBloodlusts(spellService.getBySpellIds(takenBloodlusts));
         }
         if (usedBossSkillIds.size() > 0) {
             // 보스 사용 스킬목록 추가
@@ -212,7 +218,8 @@ public class ProcessingService {
     private MplusFightsDTO processFightsData(MplusFightsDTO fightsDTO
             , List<List<MplusEnemyCastsDTO>> enemyCasts
             , List<List<List<MplusPlayerCastsDTO>>> takenBuffs
-            , List<List<List<MplusPlayerCastsDTO>>> defensiveCasts) {
+            , List<List<List<MplusPlayerCastsDTO>>> defensiveCasts
+            , List<List<List<MplusPlayerCastsDTO>>> takenBlood) {
 
 //        pull 크기만큼 반복문
         for (int k = 0; k < fightsDTO.getPulls().size(); k++) {
@@ -225,6 +232,8 @@ public class ProcessingService {
             pull.getEvents().setEnemyCastsDTO(enemyCasts.get(k));
 //                받은 외생기 데이터
             pull.getEvents().setPlayerTakenDefensiveDTO(takenBuffs.get(k));
+//                블러드 러스트
+            pull.getEvents().setBloodlusts(takenBlood.get(k));
 //                사용한 자생기 데이터
             pull.getEvents().setPlayerDefensiveCastsDTO(defensiveCasts.get(k));
 

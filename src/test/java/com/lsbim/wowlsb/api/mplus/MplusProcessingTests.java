@@ -13,7 +13,6 @@ import com.lsbim.wowlsb.service.wcl.DungeonService;
 import com.lsbim.wowlsb.service.wcl.FightsService;
 import com.lsbim.wowlsb.service.wcl.PlayerService;
 import com.lsbim.wowlsb.service.wcl.RankingsService;
-import com.lsbim.wowlsb.service.wcl.events.ResourcesService;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,9 +43,6 @@ public class MplusProcessingTests {
 
     @Autowired
     private FightsService fightsService;
-
-    @Autowired
-    private ResourcesService resourcesService;
 
     @Autowired
     private BuffsService buffsService;

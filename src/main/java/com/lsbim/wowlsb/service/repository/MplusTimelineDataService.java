@@ -104,6 +104,7 @@ public class MplusTimelineDataService {
 
         // 데이터가 없는 경우
         if (dto == null) {
+            log.info("Timeline data is null. enqueue data: {}", cacheKey);
             scheduleDataUpdate(className, specName, dungeonId, cacheKey);
             return new ApiResponseDTO(ApiStatus.UPDATING, null);
         }
@@ -117,8 +118,19 @@ public class MplusTimelineDataService {
 //        데이터가 만료된 경우
         timelineData = dto.getTimelineData();
 
+        boolean isDuplicate = false;
+
+//        중복체크에서 투매니리퀘스트 발생 시 캐시에 넣어두고 추후 갱신 시도
+        try {
+            isDuplicate = mplusValidationService.isDuplicateTimelineData(dto, className, specName, dungeonId);
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            log.warn("could not check duplicate: {}", cacheKey, e);
+            timelineCache.putData(cacheKey, dto);
+            return new ApiResponseDTO(ApiStatus.COMPLETE, dto.getTimelineData());
+        }
+
 //        호출횟수 초과한 상태에서 중복데이터 확인 불가능. 일단 리턴
-        if (mplusValidationService.isDuplicateTimelineData(dto, className, specName, dungeonId)) {
+        if (isDuplicate) {
             log.info("Timeline Data is Duplicate");
 //            중복 데이터는 다시 저장하여 날짜 갱신
             addTimelineData(className, specName, dungeonId, timelineData);

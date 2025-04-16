@@ -7,7 +7,7 @@ import lombok.Getter;
 public enum Shaman implements SkillInfo{
     STONE_BULWARK_TOTEM(WowClass.SHAMAN, "ALL", "돌의 보루 토템", 108270),
     ASTRAL_SHIFT(WowClass.SHAMAN, "ALL", "영혼 이동", 108271),
-    ANCESTRAL_GUIDANCE(WowClass.SHAMAN, "ALL", "고대의 인도", 108281),
+//    ANCESTRAL_GUIDANCE(WowClass.SHAMAN, "ALL", "고대의 인도", 108281),
     EARTH_ELEMENTAL(WowClass.SHAMAN, "ALL", "대지의 정령", 198103),
     //  복원
     ASCENDANCE(WowClass.SHAMAN, "Restoration", "승천", 114052),

@@ -109,7 +109,7 @@ public class QueueService {
                 break;
             } catch (Exception e) {
                 log.warn("Error queue processing task", e);
-                if(task != null){
+                if (task != null) {
                     task.getFuture().completeExceptionally(e);
                 }
             } finally {
@@ -119,7 +119,12 @@ public class QueueService {
                             task.specName,
                             task.dungeonId
                     );
-                    taskSet.remove(completeTaskKey);
+
+                    // 성공, 예외발생, 취소 모두 포함된 완료체크
+//                     task.getFuture().complete(result);가 있기 때문에 성공, 예외, 실패 시 true
+                    if (task.getFuture().isDone()) {
+                        taskSet.remove(completeTaskKey);
+                    }
                 }
             }
         }
