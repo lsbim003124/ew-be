@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public enum Dungeons {
 
-//    CATA
+/*//    CATA
     GRIMBATOL("Grim Batol",60670),
 //    BFA
     SIEGE_OF_BORALUS("Siege of Boralus",61822),
@@ -16,7 +16,7 @@ public enum Dungeons {
     THE_STONEVAULT("The Stonevault", 12652),
     ARAKARA("Ara-Kara, City of Echoes", 12660),
     THE_DAWNBREAKER("The Dawnbreaker", 12662),
-    CITY_OF_THREADS("City of Threads", 12669),
+    CITY_OF_THREADS("City of Threads", 12669),*/
 
     // S2
     OPERATION_MECHAGON_WORKSHOP("Operation: Mechagon - Workshop", 112098),

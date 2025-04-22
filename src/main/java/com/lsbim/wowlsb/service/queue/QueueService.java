@@ -3,10 +3,7 @@ package com.lsbim.wowlsb.service.queue;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lsbim.wowlsb.service.ProcessingService;
 import jakarta.annotation.PreDestroy;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -33,6 +30,8 @@ public class QueueService {
     //    큐 작업에만 쓰일 객체
     @Getter
     @AllArgsConstructor
+    // Lombok 의 @ToString 을 이용해, 원하는 필드만 출력하도록
+    @ToString(of = {"className", "specName", "dungeonId"})
     public static class TaskRequest {
         private String className;
         private String specName;
@@ -48,7 +47,7 @@ public class QueueService {
     public ObjectNode enqueueTask(String className, String specName, int dungeonId) {
         String newKey = createTaskKey(className, specName, dungeonId);
 //        중복체크
-        if (taskSet.contains(newKey)) {
+        if (isTaskInSet(className, specName, dungeonId)) {
             log.warn("Duplicate task data: {}", newKey);
             return null;
         }
@@ -88,8 +87,10 @@ public class QueueService {
                     if (taskQueue.isEmpty()) {
                         log.info("Queue work end.");
                         break;
+                    } else {
+                        log.info("This task is null, Queue is: {}", taskQueue.size());
+                        continue;
                     }
-                    continue;
                 }
 
                 log.info("Queue Poll {}", task);
@@ -100,6 +101,21 @@ public class QueueService {
                         task.getSpecName(),
                         task.getDungeonId()
                 );
+
+//                결과가 null일때 다시 queue에 task 넣기
+                if (result == null) {
+                    log.info("Result is null, re-enqueue task: {}", task);
+                    taskQueue.offer(task);
+
+                    try {
+                        Thread.sleep(120000); // 2분 대기
+                    } catch (InterruptedException ie) {
+                        log.warn("Sleep interrupted: ", ie);
+                        Thread.currentThread().interrupt();
+                    }
+
+                    continue; // set에서 remove하기 전에 넘어감
+                }
 
                 task.getFuture().complete(result); // 해당 코드 호출하는 순간 enqueueTask 리턴
 

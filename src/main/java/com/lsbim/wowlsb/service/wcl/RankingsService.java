@@ -73,7 +73,7 @@ public class RankingsService {
         );
 
         ObjectNode result = response.getBody();
-        log.info(result);
+//        log.info(result);
 
         ArrayNode rankings = (ArrayNode) result.path("data").path("worldData")
                 .path("encounter").path("characterRankings")
@@ -81,7 +81,7 @@ public class RankingsService {
 
         MplusRankingsDTO dto = MplusRankingsDTO.fromArrayNode(rankings);
 
-        log.info(dto);
+//        log.info(dto);
 
 //        log.info("1회 호출");
         return dto;

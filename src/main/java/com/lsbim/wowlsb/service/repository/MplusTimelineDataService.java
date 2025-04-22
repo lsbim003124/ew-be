@@ -85,6 +85,7 @@ public class MplusTimelineDataService {
 
         // 캐시에 데이터가 있으면 반환
         if (timelineData != null) {
+            log.info("Cache data exist");
 //            캐시데이터 날짜체크
             LocalDateTime dataTime = timelineCache.getDataTime(cacheKey);
 
@@ -111,6 +112,7 @@ public class MplusTimelineDataService {
 
         // DB 데이터가 유효한 경우, DTO 캐싱 + 데이터만 반환
         if (!mplusValidationService.isDataExpired(dto.getCreatedDate())) {
+            log.info("Return timeline data from db");
             timelineCache.putData(cacheKey, dto);
             return new ApiResponseDTO(ApiStatus.COMPLETE, dto.getTimelineData());
         }

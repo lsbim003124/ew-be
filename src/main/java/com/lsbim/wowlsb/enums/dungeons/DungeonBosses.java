@@ -4,6 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum DungeonBosses {
+/*
     //    THE_STONEVAULT
     E_D_N_A(Dungeons.THE_STONEVAULT, "E.D.N.A", 210108, "asd"),
     SKARMORAK(Dungeons.THE_STONEVAULT, "Skarmorak", 210156, "asd"),
@@ -49,6 +50,7 @@ public enum DungeonBosses {
     FANGS_OF_THE_QUEEN(Dungeons.CITY_OF_THREADS, "Fangs of the Queen", 0, "여왕의 송곳니"),
     THE_COAGLAMATION(Dungeons.CITY_OF_THREADS, "The Coaglamation", 216320, "asd"),
     IZO_THE_GRAND_SPLICER(Dungeons.CITY_OF_THREADS, "Izo, the Grand Splicer", 216658, "asd"),
+*/
 
     //    S2
     //    THE_MOTHERLODE
@@ -101,12 +103,12 @@ public enum DungeonBosses {
     KEEZA_QUICKFUSE(Dungeons.OPERATION_FLOODGATE, "Keeza Quickfuse", 226403, "키자"),
     DEMOLITION_DUO(Dungeons.OPERATION_FLOODGATE, "Demolition Duo", 0, "박살 2인조"),
     SWAMPFACE(Dungeons.OPERATION_FLOODGATE, "Swampface", 226396, "늪지면상"),
-    GEEZLE_GIGAZAP(Dungeons.OPERATION_FLOODGATE, "Geezle Gigazap", 226404, "기즐 기가잽"),
+    GEEZLE_GIGAZAP(Dungeons.OPERATION_FLOODGATE, "Geezle Gigazap", 226404, "기즐 기가잽");
 
 
 
     //      영문명 -> 한글명으로 바꾸기 때문에, 네임드가 여럿인 경우 대표 더미데이터 필요
-    FANGS_OF_THE_QUEEN_DUMMY(Dungeons.CITY_OF_THREADS, "Fangs of the Queen", 0, "여왕의 송곳니");
+//    FANGS_OF_THE_QUEEN_DUMMY(Dungeons.CITY_OF_THREADS, "Fangs of the Queen", 0, "여왕의 송곳니");
 
     private final Dungeons dungeons;
     private final String bossName;

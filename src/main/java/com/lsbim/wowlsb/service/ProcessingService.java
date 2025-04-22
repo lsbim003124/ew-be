@@ -54,7 +54,15 @@ public class ProcessingService {
         Set<Integer> buffs = new HashSet<>();
 
 //        WCL 쐐기 전문화+던전 1~10위 랭킹 목록, 여기서 예외 발생 시 Queue에서 처리중
-        MplusRankingsDTO rankingsDTO = rankingsService.getMplusRankings(dungeonId, className, spec);
+        MplusRankingsDTO rankingsDTO;
+
+        try {
+            rankingsDTO = rankingsService.getMplusRankings(dungeonId, className, spec);
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            log.warn("No Rankings Data: {}", processingKey, e.getMessage());
+            return null;
+        }
+
         if (rankingsDTO == null) {
             log.warn("No Rankings Data: {}", processingKey);
             return null;
@@ -81,7 +89,8 @@ public class ProcessingService {
                 MplusFightsDTO fightsDTO = fightsService.getMplusFights(fightParamDTO);
                 if (fightsDTO == null) {
                     log.warn("No fights Data: {}", processingKey);
-                    return null;
+                    rankingsIndex++;
+                    continue;
                 }
 
 //                  유저 actorId
@@ -94,11 +103,6 @@ public class ProcessingService {
                         , dungeonId
                         , actorId
                 );
-
-                if (enemyCasts == null) {
-                    log.warn("No enemyCasts Data: {}", processingKey);
-                    return null;
-                }
 
                 // 실제로 사용한 주문만 Set에 넣기
                 enemyCasts.stream()        // List<List<MplusEnemyCastsDTO>>
@@ -128,10 +132,6 @@ public class ProcessingService {
                         , fightsDTO
                         , actorId
                         , defList);
-                if (defensiveCasts == null) {
-                    log.warn("No defensiveCasts Data: {}", processingKey);
-                    return null;
-                }
 
 //                    유저 하나의 fightsDTO에 Pull마다 데이터 넣기
                 MplusFightsDTO processFightsDTO = processFightsData(fightsDTO
@@ -166,7 +166,7 @@ public class ProcessingService {
 //                  작업 후 인덱스 증가
                 rankingsIndex++;
             } catch (HttpClientErrorException.TooManyRequests e) {
-                log.warn("Too Many Requests index {}, Waiting for 1m before retrying.", rankingsIndex, e);
+                log.warn("Too Many Requests index {}, Waiting for 2m before retrying.", rankingsIndex, e.getMessage());
                 try {
                     Thread.sleep(120000); // 2분 대기
                 } catch (InterruptedException ie) {
@@ -175,8 +175,15 @@ public class ProcessingService {
                 }
 
             } catch (Exception e) {
-                log.warn("Failed process timeline data... {}", processingKey, e);
-                rankingsIndex++; // 에러 발생 시 인덱스 넘기기
+//                WCL 503, 504 발생 있음
+                log.warn("Failed process timeline data... {}", processingKey);
+                log.warn(e.getMessage());
+                try {
+                    Thread.sleep(60000); // 1분 대기
+                } catch (InterruptedException ie) {
+                    log.warn("Sleep interrupted: ", ie);
+                    Thread.currentThread().interrupt();
+                }
             }
 
             log.info("{}/{} Complete get Rakings Data, {}", rankingsIndex, rankingSize, processingKey);
